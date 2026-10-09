@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dendros Data Tree</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #02090f;
+        }
+
+        #banner3d {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://esm.sh/three@0.163.0"
+            }
+        }
+    </script>
+    <script src="../include/analytics.js"></script>
+</head>
+
+<body>
+    <!-- The data tree, full-viewport: the same seeded scene the homepage
+         banner runs, in fill mode -->
+    <div id="banner3d" data-fill="viewport" aria-label="Dendros Labs data tree"></div>
+
+    <script type="module">
+        import { TreeZeroVis } from '../include/tree-zero.js?v=1';
+        new TreeZeroVis(document.getElementById('banner3d'));
+    </script>
+    <script type="module" src="../include/thc_chrome.js"></script>
+</body>
+
+</html>

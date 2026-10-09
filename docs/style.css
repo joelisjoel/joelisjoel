@@ -1,0 +1,107 @@
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #111;
+    color: #eee;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    /* Explicit width: with only short copy the flex-centered column would
+       otherwise shrink-wrap to its text and squeeze the banner */
+    width: 100%;
+    max-width: 800px;
+    box-sizing: border-box;
+    padding: 40px 20px;
+}
+
+.logo {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 40px;
+    border-radius: 8px;
+    /* Optional: adds a slight premium feel if it's a screenshot */
+}
+
+.hero-image {
+    max-width: 100%;
+    height: auto;
+    margin: 20px 0;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+    text-align: left;
+}
+
+p {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    color: #ccc;
+    margin-bottom: 1.5rem;
+}
+
+a {
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    transition: border-color 0.2s;
+}
+
+a:hover {
+    border-bottom-color: #fff;
+}
+
+.links {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.demos {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid #333;
+    width: 100%;
+}
+
+.demos h2 {
+    font-size: 1.5rem;
+    margin-bottom: 60px;
+    color: #888;
+}
+
+.demo-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    /* Wrap onto new rows on narrow screens instead of overlapping */
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.demo-list li a {
+    /* Block-level so the card's padding occupies real layout space;
+       inline anchors let padded cards pile on top of each other */
+    display: block;
+    padding: 20px 30px;
+    background: #0d341b;
+    border-radius: 6px;
+    border: 1px solid #333;
+    text-align: center;
+}
+
+.demo-list li a:hover {
+    background: #333;
+}

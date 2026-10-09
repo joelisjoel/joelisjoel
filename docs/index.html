@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dendros Labs</title>
+  <link rel="stylesheet" href="style.css?v=5">
+  <style>
+    /* Critical gallery layout, inlined so a stale cached stylesheet can
+       never re-break it: cards are block-level and the row wraps */
+    .demo-list {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .demo-list li a {
+      display: block;
+      padding: 20px 30px;
+      background: #0d341b;
+      border-radius: 6px;
+      border: 1px solid #333;
+      text-align: center;
+    }
+
+    /* Featured game card (Wyrm): thumbnail + blurb + play button;
+       side-by-side on wide screens, stacked on phones */
+    .feature-card {
+      /* The gallery section spans the full page, so cap and centre the
+         card with phone gutters */
+      box-sizing: border-box;
+      width: min(760px, calc(100% - 32px));
+      display: flex;
+      align-items: stretch;
+      margin: -30px auto 36px;
+      background: #161a24;
+      border: 1px solid #333;
+      border-radius: 10px;
+      overflow: hidden;
+      color: #eee;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: #FFD93D;
+      transform: translateY(-2px);
+    }
+
+    .feature-card img {
+      display: block;
+      width: 58%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+    }
+
+    .feature-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+      padding: 20px 24px;
+    }
+
+    .feature-tag {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9aa3bf;
+    }
+
+    .feature-title {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #FFD93D;
+    }
+
+    .feature-sub {
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #ccc;
+    }
+
+    .feature-cta {
+      align-self: flex-start;
+      margin-top: 6px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      background: #FFD93D;
+      color: #1a1400;
+      font-weight: 800;
+    }
+
+    @media (max-width: 600px) {
+      .feature-card { flex-direction: column; }
+      .feature-card img { width: 100%; }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://esm.sh/three@0.163.0"
+      }
+    }
+  </script>
+  <script src="include/analytics.js"></script>
+  <script type="module">
+    import { trackAndDisplayVisits } from './include/visits.js';
+    trackAndDisplayVisits("index.html");
+  </script>
+</head>
+
+
+<body>
+
+  <div class="container">
+    <!-- Headline banner as a clean MiniPlayer: no chrome in the page flow;
+         click expands to fullscreen where the transport bar and vis picker
+         rail appear -->
+    <div id="banner3d" class="logo" aria-label="Dendros Labs data tree"></div>
+
+    <h1>Dendros Labs </h1>
+
+    <p>Dendros is an experimental investing side-hustle.</p>
+
+    <!-- 
+<div class="links">
+      <h2>Reading List</h2>
+      <div>Chain of Thought - <a href="https://x.com/TreehouseCap88">https://x.com/TreehouseCap88</a></div>
+ -->
+      <!-- 
+<div>Research and Opinion - <a
+          href="https://substack.com/@treehousecapital">https://substack.com/@treehousecapital</a></div>
+ -->
+    </div>
+
+    <div class="demos">
+      <h2>Vibe Code Gallery</h2>
+      <a class="feature-card" href="wyrm/">
+        <img src="include/thumb-wyrm.jpg" width="960" height="540" loading="lazy"
+          alt="Wyrm gameplay: neon dragons tangled over a dusk cloud sea">
+        <div class="feature-body">
+          <div class="feature-tag">New · PC prototype</div>
+          <div class="feature-title">WYRM</div>
+          <div class="feature-sub">A 3D dragon take on Slither. Fly, eat, grow &mdash; and don't touch their tails.</div>
+          <div class="feature-cta">Play &rarr;</div>
+        </div>
+      </a>
+      <ul class="demo-list">
+        <li><a href="cube/">Cube Demo</a></li>
+        <li><a href="datatree/">Data Tree</a></li>
+        <li><a href="datatree2/">Data Tree 2</a></li>
+        <li><a href="metacube/">Metacube</a></li>
+        <li><a href="worldview/">Worldview: World Pulse</a></li>
+        <li><a href="snake/">Snake 2.5D</a></li>
+        <li><a href="snake3/">Snake 3D</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- The vis registry lives here in the page: each entry lazy-loads its
+       scene into the PlayerShell on first selection. Adding a vis means
+       adding a card here — no shared module changes. -->
+  <script type="module">
+    import { PlayerShell } from './include/player-shell.js?v=1';
+
+    const evolutionVis = (dataHref) => async (wrapper) => {
+      const [dataMod, visMod] = await Promise.all([
+        import(dataHref),
+        import('./datatree2/datatree-vis.js?v=5'),
+      ]);
+      return new visMod.DatatreeVis(
+        wrapper, dataMod.dataTreeStateEvolution, { chrome: false, source: dataHref });
+    };
+
+    const VISES = [
+      { id: 'two', title: 'tree two', sub: 'staged evolution replay', thumb: 'include/thumb-tree-two.jpg',
+        load: evolutionVis('./datatree2/state-evolution.js?v=4') },
+      { id: 'docs', title: 'docs tree', sub: 'this repo, from git history', thumb: 'include/thumb-docs-tree.jpg',
+        load: evolutionVis('./datatree2/data/dendros-docs.js?v=2') },
+      { id: 'zero', title: 'tree zero', sub: 'the living data tree', thumb: 'include/thumb-tree-zero.jpg',
+        load: async (wrapper) => {
+          const { TreeZeroVis } = await import('./include/tree-zero.js?v=1');
+          return new TreeZeroVis(wrapper, { chrome: false });
+        } },
+    ];
+
+    new PlayerShell(document.getElementById('banner3d'), VISES, { defaultVis: 'two' });
+  </script>
+  <script type="module" src="include/thc_chrome.js"></script>
+</body>
+
+</html>

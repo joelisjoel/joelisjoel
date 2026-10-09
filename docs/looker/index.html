@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Tree — embed</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #02090f;
+        }
+
+        #banner3d {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #embed-error {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: #c9d7e2;
+            font: 14px/1.6 sans-serif;
+            padding: 24px;
+            text-align: center;
+        }
+
+        #home-btn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            border-radius: 50%;
+            background: rgba(2, 9, 15, 0.55);
+            color: #c9d7e2;
+            text-decoration: none;
+            opacity: 0.65;
+            transition: opacity 0.2s;
+        }
+
+        #home-btn:hover {
+            opacity: 1;
+        }
+
+        #home-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://esm.sh/three@0.163.0"
+            }
+        }
+    </script>
+    <script src="../include/analytics.js"></script>
+</head>
+
+<body>
+    <!-- Embeddable data tree for Looker Studio (Insert -> URL embed) and
+         any other iframe host. Everything — page, modules, data — is
+         served from this repo via GitHub Pages. See publishing/looker/.
+         Query params:
+           ?data=dendros-docs | tree-two     pick a committed evolution
+           ?data=https://...                 fetch an evolution JSON (CORS)
+           ?chrome=0                         headless (no hint/fullscreen/transport)
+           ?home=0                           hide the home button
+         No thc_chrome and no branding on purpose: the vis is for anyone
+         with data in the right format. The unlabeled home button links to
+         whatever site root serves this page (opens a new tab when iframed —
+         sandboxed hosts block top-level navigation). -->
+    <div id="banner3d" data-fill="viewport" aria-label="Data tree"></div>
+    <div id="embed-error"></div>
+    <a id="home-btn" href="/" aria-label="Home">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 11 12 3l9 8" />
+            <path d="M5 10v10h5v-6h4v6h5V10" />
+        </svg></a>
+
+    <script type="module">
+        const params = new URLSearchParams(location.search);
+
+        const homeBtn = document.getElementById('home-btn');
+        if (params.get('home') === '0') homeBtn.remove();
+        else if (window.self !== window.top) {
+            homeBtn.target = '_blank';
+            homeBtn.rel = 'noopener';
+        }
+
+        const fail = (msg) => {
+            const el = document.getElementById('embed-error');
+            el.textContent = msg;
+            el.style.display = 'flex';
+        };
+
+        const sources = {
+            'dendros-docs': () => import('../datatree2/data/dendros-docs.js?v=2'),
+            'tree-two': () => import('../datatree2/state-evolution.js?v=4'),
+        };
+        const pick = params.get('data') ?? 'dendros-docs';
+
+        try {
+            let evolution;
+            if (sources[pick]) {
+                ({ dataTreeStateEvolution: evolution } = await sources[pick]());
+            } else if (/^https:\/\//.test(pick)) {
+                const res = await fetch(pick);
+                if (!res.ok) throw new Error(`fetch ${res.status}`);
+                evolution = await res.json();
+            } else {
+                throw new Error(`unknown data source '${pick}' — use ${Object.keys(sources).join(', ')} or an https:// JSON URL`);
+            }
+
+            const { validateEvolution } = await import('../datatree2/evolution-schema.mjs?v=1');
+            const { errors } = validateEvolution(evolution);
+            if (errors.length > 0) throw new Error(`invalid evolution: ${errors[0]}`);
+
+            const { DatatreeVis } = await import('../datatree2/datatree-vis.js?v=5');
+            new DatatreeVis(document.getElementById('banner3d'), evolution, {
+                chrome: params.get('chrome') !== '0',
+            });
+        } catch (e) {
+            fail(`Data tree could not load: ${e.message}`);
+        }
+    </script>
+</body>
+
+</html>

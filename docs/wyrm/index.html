@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wyrm — prototype</title>
+    <meta name="description" content="Wyrm: a 3D dragon take on Slither. Early PC prototype — fly, eat, grow, don't touch their tails.">
+    <link rel="icon" href="data:,">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Title capitals + brush calligraphy for the few Chinese characters used (text= keeps the font tiny). -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&text=%E4%B8%80%E4%B8%87%E4%B8%8A%E4%B8%8B%E4%B8%8D%E4%B8%96%E4%B8%A4%E4%B8%BA%E4%B9%83%E4%BA%8B%E4%BC%9A%E5%80%92%E5%85%A5%E5%85%AB%E5%85%B5%E5%86%9B%E5%87%BA%E5%87%BB%E5%88%80%E5%8A%BF%E5%8D%83%E5%8D%B7%E5%8F%AF%E5%90%B8%E5%94%AF%E5%9B%9B%E5%9B%9E%E5%9C%9F%E5%9C%A8%E5%A0%AA%E5%A2%99%E5%A3%81%E5%A4%A7%E5%A4%A9%E5%A6%82%E5%AE%B6%E5%B0%86%E5%B0%8A%E5%B1%82%E5%B8%B8%E5%BD%92%E6%88%91%E6%89%8B%E6%89%AB%E6%8C%A1%E6%95%8C%E6%96%AD%E6%96%B9%E6%97%A0%E6%98%9F%E6%9B%B4%E6%9D%A5%E6%9E%AA%E6%A5%BC%E6%A8%AA%E6%AD%A4%E6%B1%9F%E6%B3%95%E6%B5%B7%E7%81%AB%E7%83%88%E7%84%9A%E7%84%B0%E7%89%A9%E7%8B%AC%E7%8E%8B%E7%9A%84%E7%9C%8B%E7%A0%B4%E7%AB%B9%E7%BD%A9%E7%BF%BB%E8%80%85%E8%81%9A%E8%83%9C%E8%85%BE%E8%B4%A5%E9%87%8D%E9%87%91%E9%92%9F%E9%93%81%E9%93%9C%E9%9B%B2%E9%9C%A7%E9%A7%95%E9%A8%B0%E9%BE%8D%E9%BE%99&display=swap">
+    <link rel="stylesheet" href="style.css?v=16">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://esm.sh/three@0.163.0"
+            }
+        }
+    </script>
+    <script src="../include/analytics.js"></script>
+</head>
+
+<body data-state="menu">
+    <canvas id="game"></canvas>
+    <canvas id="overlay"></canvas>
+    <div id="vignette"></div>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div id="feed"></div>
+        <div id="board"></div>
+        <div id="toasts"></div>
+        <div id="hud-warn">⚠ WALL</div>
+        <div id="voice-caption"><div class="zh"></div><div class="py"></div><div class="en"></div></div>
+        <div id="hud-assist"><span class="badge">BEGINNER</span> steering you clear</div>
+        <div id="hud-stats">
+            <div class="hud-len"><span id="hud-len">0</span><small>m</small><span id="hud-kills"></span></div>
+            <div id="hud-lives" class="pearls"></div>
+            <div class="hud-tier"><span id="hud-tier"></span><div class="hair"><div id="hud-tierbar"></div></div></div>
+            <div id="hud-gauges"></div>
+        </div>
+        <canvas id="radar"></canvas>
+        <div id="hud-fps"></div>
+    </div>
+
+    <!-- Couplet either side of the start menu: "soar through cloud and mist" / "overturn rivers and seas". -->
+    <div class="couplet left" aria-hidden="true">騰雲駕霧</div>
+    <div class="couplet right" aria-hidden="true">翻江倒海</div>
+
+    <!-- Menu (attract mode runs behind it) -->
+    <div id="menu" class="panel">
+        <div class="brand">
+            <div class="seal" aria-hidden="true">龍</div>
+            <h1>WYRM</h1>
+        </div>
+        <div class="sub">Ride the clouds · rule the sky</div>
+        <input id="name" maxlength="16" autocomplete="off" spellcheck="false" aria-label="Dragon name">
+        <div id="name-error" class="err"></div>
+        <div id="profile-strip">
+            <div class="rank-seal" id="rank-seal" aria-hidden="true">石</div>
+            <div class="pinfo">
+                <div><b id="rank-name">Pebble</b> <span id="rank-jade"></span> <span id="rank-perks"></span></div>
+                <div class="hair"><div id="rank-bar"></div></div>
+            </div>
+            <button id="open-dojo" class="ghost">Perks &amp; colours</button>
+        </div>
+
+        <section class="lobby">
+            <div class="lobby-head"><b>Servers</b><span id="lobby-status"></span></div>
+            <div id="room-list"></div>
+            <button id="create-open" class="ghost">＋ Create server</button>
+            <form id="create-form" hidden>
+                <input id="create-name" maxlength="24" autocomplete="off" spellcheck="false" placeholder="Server name" aria-label="Server name">
+                <div class="arenas">
+                    <label><input type="radio" name="create-arena" value="sky" checked> <b>Skyhold</b></label>
+                    <label><input type="radio" name="create-arena" value="orb"> <b>The Orb</b></label>
+                </div>
+                <label class="opt"><input type="checkbox" id="create-beginner" checked> <span><span class="badge">BEGINNER</span><small>Steered clear of walls and the cloud sea</small></span></label>
+                <div id="create-error" class="err"></div>
+                <div class="menu-row">
+                    <button type="submit" class="cta small">Create &amp; join</button>
+                    <button type="button" id="create-cancel">Cancel</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="solo">
+            <div class="lobby-head"><b>Solo vs bots</b></div>
+            <div class="arenas">
+                <label><input type="radio" name="arena" value="sky"> <b>Skyhold</b><span>gravity · open sky · storm wall</span></label>
+                <label><input type="radio" name="arena" value="orb"> <b>The Orb</b><span>zero-G sphere · no up or down</span></label>
+            </div>
+            <label class="opt"><input type="checkbox" id="solo-beginner"> <span><span class="badge">BEGINNER</span><small>Steered clear of walls and the cloud sea</small></span></label>
+            <button id="play" class="cta">PLAY SOLO</button>
+        </section>
+        <div class="menu-row">
+            <button class="open-settings">⚙ Settings</button>
+            <button class="open-controls">🎮 Controls</button>
+        </div>
+        <a class="home" href="../">← dendroslabs</a>
+    </div>
+
+    <div id="pause" class="panel">
+        <h2 id="pause-title">Paused</h2>
+        <p id="pause-note" class="note"></p>
+        <button id="resume" class="cta">Resume</button>
+        <div class="menu-row">
+            <button class="open-settings">⚙ Settings</button>
+            <button class="open-controls">🎮 Controls</button>
+        </div>
+        <button id="quit">Leave to menu</button>
+    </div>
+
+    <div id="settings" class="panel" data-tab="server">
+        <div class="tabs">
+            <button class="tab" data-tab="server">🖧 Server</button>
+            <button class="tab" data-tab="player">👤 Player</button>
+        </div>
+        <div class="tab-body" data-body="server">
+            <p class="note">Room rules. In multiplayer the room sets these for everyone in it.</p>
+            <label class="opt big"><input type="checkbox" id="opt-beginner"> <span><span class="badge">BEGINNER</span><small>Steered clear of walls and the cloud sea</small></span></label>
+            <label class="opt-range"><span>Starting dragons</span><input type="range" id="srv-start" min="0" max="30" step="1"><b id="srv-start-v"></b></label>
+            <label class="opt-range"><span>Max dragons</span><input type="range" id="srv-max" min="1" max="40" step="1"><b id="srv-max-v"></b></label>
+            <label class="opt-range"><span>New dragon every</span><input type="range" id="srv-every" min="5" max="120" step="5"><b id="srv-every-v"></b></label>
+        </div>
+        <div class="tab-body" data-body="player">
+            <p class="note">Just for you, on this device.</p>
+            <label class="opt big"><input type="checkbox" id="opt-wide"> <span><b>Wide view</b><small>See to your sides: the screen edges bend to show what's beside and behind you</small></span></label>
+            <label class="opt"><input type="checkbox" id="opt-mirror"> <span>Rear-view mirror<small>A mirror at the top of the screen shows what's behind you</small></span></label>
+            <label class="opt"><input type="checkbox" id="opt-invert"> <span>Invert pitch<small>↑ / ↓ keys: up = nose down, like a flight sim (the mouse isn't affected)</small></span></label>
+            <label class="opt"><input type="checkbox" id="opt-lock"> <span>Lock mouse<small>Virtual stick; the cursor can't leave the window</small></span></label>
+            <label class="opt"><input type="checkbox" id="opt-assist"> <span>Zero-G orientation assist<small>In The Orb, slowly rolls "up" toward the centre</small></span></label>
+            <label class="opt-range"><span>Graphics</span>
+                <select id="opt-gfx"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low (faster)</option></select><b></b></label>
+            <label class="opt"><input type="checkbox" id="opt-motion"> <span>Reduce motion<small>Less camera roll, no FOV kick</small></span></label>
+            <label class="opt"><input type="checkbox" id="opt-music"> <span>Music <small>(N) The soundtrack builds as the action heats up</small></span></label>
+            <label class="opt"><input type="checkbox" id="opt-voice"> <span>Dragon voice<small>Your dragon shouts in Mandarin at big moments (with pinyin + English captions)</small></span></label>
+            <label class="opt"><input type="checkbox" id="opt-mute"> <span>Mute all sound <small>(M)</small></span></label>
+        </div>
+        <button class="cta close-overlay">Done</button>
+    </div>
+
+    <div id="dojo" class="panel">
+        <h2>Perks &amp; colours</h2>
+        <p class="note" id="dojo-note"></p>
+        <div id="dojo-perks"></div>
+        <div class="lobby-head"><b>Colours</b></div>
+        <div id="dojo-skins"></div>
+        <button class="cta close-overlay">Done</button>
+    </div>
+
+    <div id="controls" class="panel">
+        <h2>Controls</h2>
+        <div class="keys">
+            <div><b>Touch</b></div><div>put a finger on the sky: your dragon turns toward it · lift to fly straight · bolt button (or a second finger) to boost · chevrons to brake · flame for dragonfire · ❚❚ to pause</div>
+            <div><b>Mouse</b></div><div>steer — the further from centre, the harder you turn</div>
+            <div><b>Click / W / Space</b></div><div>boost (burns length)</div>
+            <div><b>Right-click / S</b></div><div>brake — tighter turns</div>
+            <div><b>A / D</b></div><div>roll</div>
+            <div><b>Arrow keys</b></div><div>steer without the mouse</div>
+            <div><b>C</b></div><div>look back (also: wide view &amp; mirror in Settings → Player)</div>
+            <div><b>Body temp</b></div><div>the sun at the centre and crowds warm you up — hotter = faster, with a bigger thrust tank</div>
+            <div><b>Thrust</b></div><div>boost runs on a ~10 s tank that refills when you're not boosting</div>
+            <div><b>E / F</b></div><div>breathe dragonfire — grab a red crystal first; cuts the first tail in the cone</div>
+            <div><b>Esc / P</b></div><div>pause — online, folds your wings: after 3 s you leave the sky and your length is kept</div>
+            <div><b>N</b></div><div>music on / off</div>
+            <div><b>M</b></div><div>mute all sound</div>
+            <div><b>`</b></div><div>tuning panel</div>
+        </div>
+        <button class="cta close-overlay">Done</button>
+    </div>
+
+    <div id="respawn" aria-live="polite">
+        <div id="respawn-text"></div>
+        <div id="respawn-count"></div>
+        <div id="respawn-lives" class="pearls"></div>
+        <div id="respawn-jade"></div>
+    </div>
+
+    <div id="card" class="panel">
+        <h2 id="card-title"></h2>
+        <div id="card-sub"></div>
+        <div id="card-jade"></div>
+        <div class="grid">
+            <div><span>peak length</span><b id="card-len"></b></div>
+            <div><span>kills</span><b id="card-kills"></b></div>
+            <div><span>time alive</span><b id="card-time"></b></div>
+            <div><span>best rank</span><b id="card-rank"></b></div>
+        </div>
+        <button id="again" class="cta">Play again <small>(Space)</small></button>
+        <button id="menu-btn">Menu</button>
+    </div>
+
+    <!-- Touch controls (phones / tablets): steer with a finger on the sky. -->
+    <div id="touch-ui">
+        <button id="t-pause" aria-label="Pause"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button>
+        <button id="t-fire" aria-label="Dragonfire"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c.6 3 4.5 5.2 4.5 10a4.5 4.5 0 0 1-9 0c0-2.4 1.3-3.8 2.4-4.8.1 1.7.9 2.8 2 3.2-.4-2.9-.8-5.2.1-8.4z"/></svg></button>
+        <button id="t-brake" aria-label="Brake"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 7l-5 5 5 5M18 7l-5 5 5 5"/></svg></button>
+        <button id="t-boost" aria-label="Boost"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 5 13h6l-1 9 8-11h-6z"/></svg></button>
+    </div>
+
+    <button id="tune-btn" title="Tuning panel (`)">⚙</button>
+    <div id="tune"></div>
+
+    <script type="module" src="js/main.js?v=21"></script>
+</body>
+
+</html>

@@ -1,0 +1,17 @@
+{
+    "colors": {
+        "conflict": "#ff3344",
+        "political": "#ffaa00",
+        "disaster": "#00ccff",
+        "tech": "#aa66ff",
+        "cultural": "#00ffcc",
+        "population": "#00ff88"
+    },
+    "events": [
+        { "color": "#ff3344", "label": "US-Israel kill Khamenei in Tehran strikes" },
+        { "color": "#ff3344", "label": "Iran retaliates — missiles hit Gulf cities" },
+        { "color": "#ff3344", "label": "Israel strikes Hezbollah in Lebanon" },
+        { "color": "#00ccff", "label": "Middle East airspace shut down" },
+        { "color": "#ffaa00", "label": "Global protests erupt over Iran war" }
+    ]
+}

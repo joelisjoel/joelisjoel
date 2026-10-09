@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dendros Data Tree 2</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #02090f;
+        }
+
+        #banner3d {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://esm.sh/three@0.163.0"
+            }
+        }
+    </script>
+    <script src="../include/analytics.js"></script>
+</head>
+
+<body>
+    <!-- Data tree, take two: the same scene as /datatree but driven by a
+         static dataTreeStateEvolution object rendered by DatatreeVis -->
+    <div id="banner3d" data-fill="viewport" aria-label="Dendros Labs data tree"></div>
+
+    <script type="module">
+        import { dataTreeStateEvolution } from './state-evolution.js?v=4';
+        import { DatatreeVis } from './datatree-vis.js?v=5';
+        new DatatreeVis(document.getElementById('banner3d'), dataTreeStateEvolution);
+    </script>
+    <script type="module" src="../include/thc_chrome.js"></script>
+</body>
+
+</html>
