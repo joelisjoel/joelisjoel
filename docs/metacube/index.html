@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Code: Metacube</title>
+    <style>
+        /* Ensure the canvas takes up the full screen and remove default margins */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://esm.sh/three@0.163.0"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <script type="module">
+        // Import everything we need from Three.js
+        import * as THREE from 'three';
+        import { createFace1Material, createFace1Pieces } from './faces/face1-chessboard.js';
+        import { createFace2Mesh } from './faces/face2-mandelbrot.js';
+        import { createFace3Material, createFace3Clock } from './faces/face3-clock.js';
+        import { createFace4Material, createFace4Hologram } from './faces/face4-hologram.js';
+        import { createFace5Material, createFace5Staircase } from './faces/face5-staircase.js';
+        import { createFace6Material, createFace6StrangeLoop } from './faces/face6-strangeloop.js';
+
+        // --- SCENE SETUP ---
+        // Create the scene to hold our objects
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x06070c); // Deep-space black
+
+        // Create a camera
+        const camera = new THREE.PerspectiveCamera(
+            75, // Field of view
+            window.innerWidth / window.innerHeight, // Aspect ratio
+            0.1, // Near clipping plane
+            1000 // Far clipping plane
+        );
+        camera.position.z = 3; // Move the camera back so we can see the cube
+
+        // Create the renderer and attach it to the DOM
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        // Shadow maps for the workshop face's lamp and hologram lights; other
+        // lights don't cast, so the cost stays scoped to that scene
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+
+        // --- OBJECT CREATION ---
+        // Create the geometry (the shape) of the cube
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+        // Create one material per face (BoxGeometry group order: +x, -x, +y, -y, +z, -z)
+        // Faces 1-3 get their own baroque scenes; the rest stay flat colors for now.
+        // Face 2's own material is hidden entirely beneath its Mandelbrot relief mesh.
+        function flatFace(color) {
+            return new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.7 });
+        }
+
+        const materials = [
+            createFace1Material(),  // +x: chessboard
+            flatFace(0x0a0a16),     // -x: hidden beneath the Mandelbrot relief mesh
+            createFace3Material(),  // +y: clock face
+            createFace4Material(),  // -y: hologram workshop floor
+            createFace5Material(),  // +z: staircase courtyard (alpha-holed opening)
+            createFace6Material(),  // -z: strange-loop parchment plate
+        ];
+
+        // Combine geometry and materials into a mesh
+        const cube = new THREE.Mesh(geometry, materials);
+        cube.receiveShadow = true; // the -y face is the workshop's floor
+
+        // Face 1's chess pieces, face 2's Mandelbrot relief, and face 3's clock hands
+        // and gears are real 3D meshes, parented to the cube so they rotate with it
+        const face1Pieces = createFace1Pieces();
+        cube.add(face1Pieces.group);
+        const face2Mandelbrot = createFace2Mesh();
+        cube.add(face2Mandelbrot.group);
+        const face3Clock = createFace3Clock();
+        cube.add(face3Clock.group);
+        const face4Hologram = createFace4Hologram();
+        cube.add(face4Hologram.group);
+        const face5Staircase = createFace5Staircase();
+        cube.add(face5Staircase.group);
+        const face6StrangeLoop = createFace6StrangeLoop();
+        cube.add(face6StrangeLoop.group);
+
+        // Add the cube to the scene
+        scene.add(cube);
+
+
+        // --- LIGHTING ---
+        // Add some lights so the StandardMaterial shows up
+        // Ambient light for general illumination
+        const ambientLight = new THREE.AmbientLight(0x8a8a8a, 2.2);
+        scene.add(ambientLight);
+
+        // Key point light for shadows and highlights
+        const pointLight = new THREE.PointLight(0xffffff, 30, 100);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+        // Cool fill from the opposite side so faces turned from the key light
+        // don't fall to near-black
+        const fillLight = new THREE.PointLight(0xaabbdd, 10, 100);
+        fillLight.position.set(-5, -3, -4);
+        scene.add(fillLight);
+
+        // Sunlight from behind the viewer: a directional light along the camera
+        // axis so whichever face is turned toward the screen reads bright and
+        // evenly lit head-on
+        const sunLight = new THREE.DirectionalLight(0xfff4e0, 1.6);
+        sunLight.position.set(0, 1, 8);
+        sunLight.target.position.set(0, 0, 0);
+        scene.add(sunLight);
+        scene.add(sunLight.target);
+
+
+        // --- STELLAR BACKDROP ---
+        // A painted equirectangular sky texture wrapping the whole scene: an
+        // all-sky star field plus a Milky Way band along the equator, built from
+        // layered glow clouds, dark dust lanes, and a dense ribbon of faint
+        // stars. Painting the sky (instead of a Points cloud) gives the soft
+        // nebulosity a real galaxy band has.
+        function createSkyTexture() {
+            // S scales every painted element with the canvas, so raising the
+            // resolution sharpens the sky without changing its composition
+            const S = 2;
+            const W = 2048 * S;
+            const H = 1024 * S;
+            const canvas = document.createElement('canvas');
+            canvas.width = W;
+            canvas.height = H;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#04060c';
+            ctx.fillRect(0, 0, W, H);
+
+            // Rough gaussian around the equator via Irwin-Hall
+            const bandY = (sigma) => H / 2 +
+                (Math.random() + Math.random() + Math.random() + Math.random() - 2) * sigma * S;
+
+            // Galaxy glow clouds along the band
+            for (let i = 0; i < 260; i++) {
+                const x = Math.random() * W;
+                const y = bandY(58);
+                const r = (40 + Math.random() * 80) * S;
+                const warm = Math.random() < 0.25;
+                const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+                g.addColorStop(0, warm ? 'rgba(235, 222, 195, 0.075)' : 'rgba(175, 195, 240, 0.07)');
+                g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = g;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Dark dust lanes threading the band's midline
+            for (let i = 0; i < 60; i++) {
+                const x = Math.random() * W;
+                const y = bandY(26);
+                const r = (16 + Math.random() * 34) * S;
+                const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+                g.addColorStop(0, 'rgba(3, 4, 8, 0.32)');
+                g.addColorStop(1, 'rgba(3, 4, 8, 0)');
+                ctx.fillStyle = g;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Stars: all-sky scatter, a dense faint ribbon in the band, and a
+            // handful of bright glowing standouts
+            const palettes = ['255,255,255', '223,232,255', '255,233,200'];
+            const star = (x, y, r, alpha) => {
+                ctx.fillStyle = `rgba(${palettes[Math.floor(Math.random() * 3)]}, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            };
+            for (let i = 0; i < 2600; i++) {
+                star(Math.random() * W, Math.random() * H, (0.4 + Math.random()) * S, 0.4 + Math.random() * 0.6);
+            }
+            for (let i = 0; i < 1600; i++) {
+                star(Math.random() * W, bandY(60), (0.3 + Math.random() * 0.7) * S, 0.3 + Math.random() * 0.5);
+            }
+            for (let i = 0; i < 12; i++) {
+                const x = Math.random() * W;
+                const y = Math.random() * H;
+                const glow = ctx.createRadialGradient(x, y, 0, x, y, 8 * S);
+                glow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+                glow.addColorStop(0.3, 'rgba(210, 225, 255, 0.35)');
+                glow.addColorStop(1, 'rgba(210, 225, 255, 0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(x, y, 8 * S, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            texture.colorSpace = THREE.SRGBColorSpace;
+            return texture;
+        }
+
+        scene.background = createSkyTexture();
+        scene.backgroundRotation = new THREE.Euler(0.4, 0, 0.25); // tilt the band across the view
+
+
+        // --- POINTER CONTROLS (drag to rotate, pinch/scroll to zoom) ---
+        // Pointer Events unify mouse, touch, and pen under one API
+        const activePointers = new Map(); // pointerId -> {x, y}
+        let lastDragPos = null;
+        let pinchStartDistance = null;
+        let pinchStartZ = null;
+        const MIN_ZOOM = 1.5;
+        const MAX_ZOOM = 8;
+
+        // Free rigid-body rotation: the cube's center of mass is pinned at the
+        // origin and it tumbles with a conserved angular-velocity VECTOR (world
+        // space, radians per frame) — no privileged axis. A uniform cube's
+        // inertia tensor is isotropic, so torque-free rotation is exactly a
+        // constant omega; integrating it with quaternion premultiplication each
+        // frame is the true physics, not an approximation. Releasing a drag
+        // hands the drag's own axis and speed to omega.
+        const angularVelocity = new THREE.Vector3(0.005, 0.005, 0);
+        const dragVelocity = new THREE.Vector3();
+        let lastMoveTime = null;
+        // Cap on |omega| to prevent dizziness: 0.5 rotations per second max,
+        // expressed in radians per frame at the 60fps animation base rate
+        const MAX_SPIN_ROT_PER_SEC = 0.5;
+        const MAX_SPIN = (MAX_SPIN_ROT_PER_SEC * Math.PI * 2) / 60;
+        const FRAME_MS = 1000 / 60;
+        const _spinAxis = new THREE.Vector3();
+        const _spinQuat = new THREE.Quaternion();
+
+        // Rotate the cube about a world-space axis whose length is the angle
+        // (quaternion premultiply = rotation applied in the world frame)
+        function rotateCubeWorld(x, y, z) {
+            _spinAxis.set(x, y, z);
+            const angle = _spinAxis.length();
+            if (angle < 1e-9) return;
+            _spinQuat.setFromAxisAngle(_spinAxis.normalize(), angle);
+            cube.quaternion.premultiply(_spinQuat);
+        }
+
+        function pointerDistance() {
+            const [a, b] = [...activePointers.values()];
+            return Math.hypot(a.x - b.x, a.y - b.y);
+        }
+
+        renderer.domElement.addEventListener('pointerdown', (event) => {
+            renderer.domElement.setPointerCapture(event.pointerId);
+            activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+            if (activePointers.size === 1) {
+                lastDragPos = { x: event.clientX, y: event.clientY };
+                dragVelocity.set(0, 0, 0);
+                lastMoveTime = null;
+            } else if (activePointers.size === 2) {
+                lastDragPos = null; // stop rotating once a second finger joins
+                pinchStartDistance = pointerDistance();
+                pinchStartZ = camera.position.z;
+            }
+        });
+
+        renderer.domElement.addEventListener('pointermove', (event) => {
+            if (!activePointers.has(event.pointerId)) return;
+            activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+            if (activePointers.size === 2) {
+                // Pinch-to-zoom: scale camera distance by the change in finger spacing
+                const distance = pointerDistance();
+                const zoom = pinchStartZ * (pinchStartDistance / distance);
+                camera.position.z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
+            } else if (activePointers.size === 1 && lastDragPos) {
+                const dx = event.clientX - lastDragPos.x;
+                const dy = event.clientY - lastDragPos.y;
+                // Touch and mouse share one drag mapping: the surface under
+                // the pointer follows the pointer. (An earlier touch-only
+                // inversion read as reversed on real phones.)
+                const dRotY = dx * 0.005; // about world Y
+                const dRotX = dy * 0.005; // about world X
+                rotateCubeWorld(dRotX, dRotY, 0);
+                lastDragPos = { x: event.clientX, y: event.clientY };
+
+                // Track this move's rotation-rate vector, normalized to
+                // per-frame speed. Use the event's own timestamp (input time),
+                // not processing time, so render lag can't distort it.
+                const dt = lastMoveTime === null ? FRAME_MS : Math.max(event.timeStamp - lastMoveTime, 1);
+                lastMoveTime = event.timeStamp;
+                dragVelocity.set(dRotX, dRotY, 0).multiplyScalar(FRAME_MS / dt);
+            }
+        });
+
+        function releasePointer(event) {
+            activePointers.delete(event.pointerId);
+            if (activePointers.size === 1) {
+                // One finger still down after a pinch: resume rotation from here
+                const [remaining] = [...activePointers.values()];
+                lastDragPos = { ...remaining };
+                pinchStartDistance = null;
+                dragVelocity.set(0, 0, 0);
+                lastMoveTime = null;
+            } else if (activePointers.size === 0) {
+                // The drag's final axis and speed become the conserved angular
+                // velocity — momentum carries through the release. A pause
+                // before letting go means the flick has died — stop. Compare
+                // input timestamps so render lag can't fake a pause.
+                const stale = lastMoveTime === null || event.timeStamp - lastMoveTime > 250;
+                if (stale) {
+                    angularVelocity.set(0, 0, 0);
+                } else {
+                    angularVelocity.copy(dragVelocity);
+                    if (angularVelocity.length() > MAX_SPIN) angularVelocity.setLength(MAX_SPIN);
+                }
+                lastDragPos = null;
+                pinchStartDistance = null;
+            }
+        }
+
+        renderer.domElement.addEventListener('pointerup', releasePointer);
+        renderer.domElement.addEventListener('pointercancel', releasePointer);
+
+        // Scroll wheel zoom for desktop/trackpad
+        renderer.domElement.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            const zoom = camera.position.z + event.deltaY * 0.002;
+            camera.position.z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
+        }, { passive: false });
+
+
+        // --- ANIMATION LOOP ---
+        // This function runs every frame to animate the scene
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Free-body tumble: integrate the conserved angular-velocity vector
+            // whenever the user isn't actively dragging the cube
+            if (activePointers.size === 0) {
+                rotateCubeWorld(angularVelocity.x, angularVelocity.y, angularVelocity.z);
+            }
+
+            // Keep face 3's clock hands and gears turning
+            face3Clock.update(new Date());
+
+            // Flicker and animate face 4's hologram
+            face4Hologram.update();
+
+            // Advance face 1's chess replay
+            face1Pieces.update();
+
+            // Breathe face 2's Mandelbrot relief in and out
+            face2Mandelbrot.update();
+
+            // Precess and pulse face 6's strange loop
+            face6StrangeLoop.update();
+
+            // March face 5's figures along their three gravities
+            face5Staircase.update();
+
+            // Render the scene with the camera
+            renderer.render(scene, camera);
+        }
+
+        // Start the animation loop
+        animate();
+
+
+        // --- RESIZE HANDLING ---
+        // Ensure the visualization adjusts nicely when the window is resized
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+
+</html>
