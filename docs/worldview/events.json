@@ -1,0 +1,7 @@
+[
+    { "lat": 35.69, "lon": 51.39, "label": "US-Israel strikes kill Iran's Khamenei", "detail": "Air strikes on Tehran kill Supreme Leader; US plans 4-5 week campaign", "category": "conflict", "intensity": 1.0 },
+    { "lat": 25.25, "lon": 55.27, "label": "Iran retaliates — missiles hit Dubai, Doha, Bahrain", "detail": "100+ injured, 4+ killed as Iran fires hundreds of missiles at Gulf cities", "category": "conflict", "intensity": 0.95 },
+    { "lat": 33.89, "lon": 35.50, "label": "Israel strikes Hezbollah in Lebanon", "detail": "Explosions outside Beirut end yearlong ceasefire", "category": "conflict", "intensity": 0.85 },
+    { "lat": 29.38, "lon": 47.99, "label": "Middle East airspace shut down", "detail": "10+ nations close skies; Dubai airport grounded", "category": "disaster", "intensity": 0.8 },
+    { "lat": 24.86, "lon": 67.01, "label": "Global protests erupt over Iran war", "detail": "Teargas fired at protests in Karachi; demonstrations worldwide", "category": "political", "intensity": 0.7 }
+]

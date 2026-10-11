@@ -1,0 +1,16 @@
+{
+    "colors": {
+        "conflict": "#ff3344",
+        "political": "#ffaa00",
+        "disaster": "#00ccff",
+        "tech": "#aa66ff",
+        "cultural": "#00ffcc",
+        "population": "#00ff88"
+    },
+    "events": [
+        {
+            "color": "#ff3344",
+            "label": "US-Israel kill Khamenei in Tehran strikes"
+        }
+    ]
+}

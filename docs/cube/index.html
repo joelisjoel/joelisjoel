@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Code: Rotating Cube</title>
+    <style>
+        /* Ensure the canvas takes up the full screen and remove default margins */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://esm.sh/three@0.163.0"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <script type="module">
+        // Import everything we need from Three.js
+        import * as THREE from 'three';
+
+        // --- SCENE SETUP ---
+        // Create the scene to hold our objects
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x111111); // Dark background
+
+        // Create a camera
+        const camera = new THREE.PerspectiveCamera(
+            75, // Field of view
+            window.innerWidth / window.innerHeight, // Aspect ratio
+            0.1, // Near clipping plane
+            1000 // Far clipping plane
+        );
+        camera.position.z = 3; // Move the camera back so we can see the cube
+
+        // Create the renderer and attach it to the DOM
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+
+        // --- OBJECT CREATION ---
+        // Create the geometry (the shape) of the cube
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+        // Create the material (the color/texture)
+        // We use MeshStandardMaterial to react to light
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x50c878, // Emerald
+            roughness: 0.3,
+            metalness: 0.7
+        });
+
+        // Combine geometry and material into a mesh
+        const cube = new THREE.Mesh(geometry, material);
+
+        // Add the cube to the scene
+        scene.add(cube);
+
+
+        // --- LIGHTING ---
+        // Add some lights so the StandardMaterial shows up
+        // Ambient light for general illumination
+        const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft white light
+        scene.add(ambientLight);
+
+        // Point light for shadows and highlights
+        const pointLight = new THREE.PointLight(0xffffff, 20, 100);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+
+        // --- ANIMATION LOOP ---
+        // This function runs every frame to animate the scene
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotate the cube slightly each frame
+            cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01;
+
+            // Render the scene with the camera
+            renderer.render(scene, camera);
+        }
+
+        // Start the animation loop
+        animate();
+
+
+        // --- RESIZE HANDLING ---
+        // Ensure the visualization adjusts nicely when the window is resized
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+
+</html>

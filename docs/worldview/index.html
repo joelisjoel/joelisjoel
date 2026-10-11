@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live World Pulse</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #fff;
+        }
+        canvas { display: block; }
+
+        /* Info Panel */
+        #panel {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px 24px;
+            max-width: 320px;
+            z-index: 10;
+        }
+        #panel h1 {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 8px;
+        }
+        #panel .title {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+        #panel .stat {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.6;
+        }
+        #panel .stat strong {
+            color: #fff;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #00ff88;
+            margin-right: 6px;
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Event Legend */
+        #legend {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px 20px;
+            z-index: 10;
+            max-width: 300px;
+        }
+        #legend h2 {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .legend-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Tooltip */
+        #tooltip {
+            position: absolute;
+            display: none;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 12px;
+            color: #fff;
+            pointer-events: none;
+            z-index: 20;
+            max-width: 220px;
+        }
+        #tooltip .tt-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        #tooltip .tt-detail {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+
+<div id="panel">
+
+    <div class="title">World Pulse</div>
+    <div class="stat">
+        <span class="status-dot"></span><span id="status">Connecting...</span><br>
+        <span id="city-count"></span><br>
+        <span id="event-count"></span>
+    </div>
+</div>
+
+<div id="legend">
+    <h2>Live Events</h2>
+    <div id="legend-items"></div>
+</div>
+
+<div id="tooltip">
+    <div class="tt-title" id="tt-title"></div>
+    <div class="tt-detail" id="tt-detail"></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ============================================================
+// CONFIG
+// ============================================================
+const GLOBE_RADIUS = 5;
+const MAX_BARS = 3000;
+const DATA_URL = 'https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_populated_places_simple.geojson';
+
+// ============================================================
+// CURRENT EVENTS DATA (loaded from events.json)
+// ============================================================
+let EVENTS = [];
+
+const EVENT_COLORS = {
+    conflict: 0xff3344,
+    political: 0xffaa00,
+    disaster: 0x00ccff,
+    tech: 0xaa66ff,
+    cultural: 0x00ffcc,
+};
+
+// ============================================================
+// SCENE
+// ============================================================
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 4, 14);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+// ============================================================
+// CONTROLS
+// ============================================================
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.3;
+controls.minDistance = 7;
+controls.maxDistance = 25;
+
+// ============================================================
+// STARFIELD
+// ============================================================
+function createStarfield() {
+    const starGeo = new THREE.BufferGeometry();
+    const count = 6000;
+    const positions = new Float32Array(count * 3);
+    const sizes = new Float32Array(count);
+    for (let i = 0; i < count; i++) {
+        const r = 80 + Math.random() * 120;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        positions[i * 3 + 2] = r * Math.cos(phi);
+        sizes[i] = Math.random() * 1.5 + 0.5;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    starGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const starMat = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.15,
+        sizeAttenuation: true,
+        transparent: true,
+        opacity: 0.8,
+    });
+    scene.add(new THREE.Points(starGeo, starMat));
+}
+createStarfield();
+
+// ============================================================
+// LIGHTING
+// ============================================================
+scene.add(new THREE.AmbientLight(0x223344, 1.0));
+
+const sunLight = new THREE.DirectionalLight(0xfff5e6, 1.5);
+sunLight.position.set(15, 10, 10);
+scene.add(sunLight);
+
+const rimLight = new THREE.DirectionalLight(0x4488ff, 1.5);
+rimLight.position.set(-10, -5, -10);
+scene.add(rimLight);
+
+const bluePoint = new THREE.PointLight(0x0066ff, 2, 30);
+bluePoint.position.set(-8, 5, -8);
+scene.add(bluePoint);
+
+// ============================================================
+// GLOBE
+// ============================================================
+const globeGroup = new THREE.Group();
+scene.add(globeGroup);
+
+const textureLoader = new THREE.TextureLoader();
+
+// Earth
+const earthGeo = new THREE.SphereGeometry(GLOBE_RADIUS, 128, 128);
+const earthMat = new THREE.MeshPhongMaterial({
+    map: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg'),
+    bumpMap: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_normal_2048.jpg'),
+    bumpScale: 0.05,
+    specularMap: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg'),
+    specular: new THREE.Color(0x222244),
+    shininess: 20,
+    emissive: 0x112233,
+    emissiveIntensity: 0.08,
+});
+const earth = new THREE.Mesh(earthGeo, earthMat);
+globeGroup.add(earth);
+
+// Atmosphere glow (inner)
+const atmoGeo = new THREE.SphereGeometry(GLOBE_RADIUS * 1.015, 64, 64);
+const atmoMat = new THREE.MeshPhongMaterial({
+    color: 0x4488ff,
+    transparent: true,
+    opacity: 0.08,
+    side: THREE.FrontSide,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+});
+globeGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
+
+// Atmosphere glow (outer)
+const outerAtmoGeo = new THREE.SphereGeometry(GLOBE_RADIUS * 1.06, 64, 64);
+const outerAtmoMat = new THREE.ShaderMaterial({
+    vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        void main() {
+            vNormal = normalize(normalMatrix * normal);
+            vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        void main() {
+            float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 4.0);
+            gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity * 0.6;
+        }
+    `,
+    side: THREE.BackSide,
+    blending: THREE.AdditiveBlending,
+    transparent: true,
+    depthWrite: false,
+});
+globeGroup.add(new THREE.Mesh(outerAtmoGeo, outerAtmoMat));
+
+// ============================================================
+// HELPERS
+// ============================================================
+function latLonToVec3(lat, lon, radius) {
+    const phi = (90 - lat) * (Math.PI / 180);
+    const theta = (lon + 180) * (Math.PI / 180);
+    return new THREE.Vector3(
+        -(radius * Math.sin(phi) * Math.cos(theta)),
+        radius * Math.cos(phi),
+        radius * Math.sin(phi) * Math.sin(theta)
+    );
+}
+
+// ============================================================
+// POPULATION BARS (instanced for performance)
+// ============================================================
+const barData = []; // store metadata for raycasting
+
+async function loadPopulationData() {
+    try {
+        const resp = await fetch(DATA_URL);
+        const data = await resp.json();
+        const features = data.features
+            .filter(f => f.properties.pop_max && !isNaN(f.geometry.coordinates[0]))
+            .sort((a, b) => b.properties.pop_max - a.properties.pop_max)
+            .slice(0, MAX_BARS);
+
+        const minPop = Math.log10(10000);
+        const maxPop = Math.log10(20000000);
+
+        const dummy = new THREE.Object3D();
+        const barGeo = new THREE.BoxGeometry(0.012, 1, 0.012);
+        barGeo.translate(0, 0.5, 0);
+
+        const barMat = new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0.85,
+        });
+
+        // Use individual meshes grouped for simplicity
+        features.forEach((f, i) => {
+            const lon = f.geometry.coordinates[0];
+            const lat = f.geometry.coordinates[1];
+            const pop = f.properties.pop_max;
+            const name = f.properties.name || 'Unknown';
+
+            let norm = (Math.log10(pop) - minPop) / (maxPop - minPop);
+            norm = Math.max(0.03, Math.min(1.0, norm));
+
+            const maxH = GLOBE_RADIUS * 0.06;
+            const h = norm * maxH;
+
+            const color = new THREE.Color().lerpColors(
+                new THREE.Color(0x00aa66),
+                new THREE.Color(0x00ddff),
+                norm
+            );
+
+            const mat = barMat.clone();
+            mat.color = color;
+
+            const geo = barGeo.clone();
+            const bar = new THREE.Mesh(geo, mat);
+            bar.scale.y = h;
+
+            const pos = latLonToVec3(lat, lon, GLOBE_RADIUS);
+            bar.position.copy(pos);
+
+            const up = new THREE.Vector3(0, 1, 0);
+            const normal = pos.clone().normalize();
+            bar.quaternion.setFromUnitVectors(up, normal);
+
+            bar.userData = { type: 'city', name, population: pop };
+            globeGroup.add(bar);
+            barData.push(bar);
+        });
+
+        document.getElementById('status').textContent = 'Live';
+        document.getElementById('city-count').innerHTML = `<strong>${features.length.toLocaleString()}</strong> urban centers tracked`;
+
+        return features.length;
+    } catch (e) {
+        console.error(e);
+        document.getElementById('status').textContent = 'Offline — cached data';
+        return 0;
+    }
+}
+
+// ============================================================
+// EVENT MARKERS
+// ============================================================
+const eventMeshes = [];
+const pulseRings = [];
+
+function createEventMarkers() {
+    EVENTS.forEach(evt => {
+        const color = EVENT_COLORS[evt.category] || 0xffffff;
+        const pos = latLonToVec3(evt.lat, evt.lon, GLOBE_RADIUS + 0.05);
+
+        // Core dot
+        const dotGeo = new THREE.SphereGeometry(0.06 + evt.intensity * 0.04, 16, 16);
+        const dotMat = new THREE.MeshBasicMaterial({
+            color,
+            transparent: true,
+            opacity: 0.95,
+        });
+        const dot = new THREE.Mesh(dotGeo, dotMat);
+        dot.position.copy(pos);
+        dot.userData = { type: 'event', ...evt };
+        globeGroup.add(dot);
+        eventMeshes.push(dot);
+
+        // Pulse ring
+        const ringGeo = new THREE.RingGeometry(0.08, 0.12, 32);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color,
+            transparent: true,
+            opacity: 0.6,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.position.copy(pos);
+
+        // Orient ring to face outward from globe
+        const normal = pos.clone().normalize();
+        ring.lookAt(pos.clone().add(normal));
+
+        ring.userData = { baseScale: 1, speed: 0.8 + evt.intensity * 0.5 };
+        globeGroup.add(ring);
+        pulseRings.push(ring);
+    });
+
+    document.getElementById('event-count').innerHTML = `<strong>${EVENTS.length}</strong> active events monitored`;
+}
+
+// Events loaded async below
+
+// ============================================================
+// RAYCASTING & TOOLTIP
+// ============================================================
+const raycaster = new THREE.Raycaster();
+raycaster.params.Mesh = { threshold: 0.1 };
+const mouse = new THREE.Vector2();
+const tooltip = document.getElementById('tooltip');
+const ttTitle = document.getElementById('tt-title');
+const ttDetail = document.getElementById('tt-detail');
+
+function onMouseMove(e) {
+    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const allInteractive = [...eventMeshes, ...barData];
+    const hits = raycaster.intersectObjects(allInteractive, false);
+
+    if (hits.length > 0) {
+        const obj = hits[0].object;
+        const ud = obj.userData;
+        if (ud.type === 'event') {
+            ttTitle.textContent = ud.label;
+            ttDetail.textContent = ud.detail;
+        } else if (ud.type === 'city') {
+            ttTitle.textContent = ud.name;
+            ttDetail.textContent = `Pop: ${ud.population.toLocaleString()}`;
+        }
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 16) + 'px';
+        tooltip.style.top = (e.clientY - 10) + 'px';
+    } else {
+        tooltip.style.display = 'none';
+    }
+}
+window.addEventListener('mousemove', onMouseMove);
+
+// ============================================================
+// ANIMATION
+// ============================================================
+const clock = new THREE.Clock();
+
+function animate() {
+    requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+
+    // Pulse event rings
+    pulseRings.forEach((ring, i) => {
+        const s = ring.userData;
+        const phase = (t * s.speed) % 2;
+        const scale = 1 + phase * 2.5;
+        ring.scale.set(scale, scale, 1);
+        ring.material.opacity = Math.max(0, 0.6 * (1 - phase / 2));
+    });
+
+    // Gentle glow pulse on event dots
+    eventMeshes.forEach((dot, i) => {
+        dot.material.opacity = 0.7 + 0.3 * Math.sin(t * 2 + i);
+    });
+
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+// Load events, legend, and population data, then start animation
+async function init() {
+    // Load events
+    try {
+        const evtResp = await fetch('events.json');
+        EVENTS = await evtResp.json();
+    } catch (e) {
+        console.error('Failed to load events.json:', e);
+    }
+
+    // Load legend
+    try {
+        const legResp = await fetch('./legend.json');
+        const legend = await legResp.json();
+        const container = document.getElementById('legend-items');
+        legend.events.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'legend-item';
+            div.innerHTML = `<div class="legend-dot" style="background: ${item.color};"></div> ${item.label}`;
+            container.appendChild(div);
+        });
+    } catch (e) {
+        console.error('Failed to load legend.json:', e);
+    }
+
+    createEventMarkers();
+    await loadPopulationData();
+    animate();
+}
+
+init();
+
+// ============================================================
+// RESIZE
+// ============================================================
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

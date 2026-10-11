@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Snake</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+
+<body>
+
+    <h1>3D Snake</h1>
+
+    <div id="game-container">
+        <!-- Canvas size: 800x800 (2x2 Grid of 400x400 viewports) -->
+        <canvas id="gameCanvas" width="800" height="800"></canvas>
+        <div id="viewport-separator"></div>
+        <div class="viewport-label label-ul">Top View</div>
+        <div class="viewport-label label-ur">West View</div>
+        <div class="viewport-label label-ll">North View</div>
+        <div class="viewport-label label-br">Snake View</div>
+
+        <div id="game-over">
+            <h2>Game Over</h2>
+            <p>Score: <span id="final-score">0</span></p>
+            <button onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-item">
+            SCORE: <span class="stat-value" id="score">0</span>
+        </div>
+        <div class="stat-item">
+            HIGH SCORE: <span class="stat-value" id="highScore">0</span>
+        </div>
+    </div>
+
+    <div class="controls-hint">
+        <span><span class="key">ARROWS</span> MOVE</span>
+        <span><span class="key">SPACE</span> PAUSE</span>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+
+</html>
