@@ -3,7 +3,7 @@ Working on personal projects related to data visualization.
 More at
 
 * [joelisjoel.org](https://joelisjoel.org)
-* [linktree](https://linktr.ee/joelisjoel)
+* [joelisjoel.com/linkme](https://joelisjoel.com/linkme)
 
 <!---
 joelisjoel/joelisjoel is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
