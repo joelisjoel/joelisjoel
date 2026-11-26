@@ -1,0 +1,464 @@
+<title>P vs NP Field</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: a scoreboard over one tall football field. Midfield is the open question; each end zone is an answer. */
+:root {
+  --bg: #f3f5f1; --fg: #17201a; --muted: #586359; --rule: #d3dbd1; --card: #ffffff;
+  --field: #e7eee3; --band: #d8dcd7; --line: #c2cebe; --goal: #9fb09b; --ez-l: #dce6f3; --ez-r: #f3e0dd;
+  --ez-text: rgba(23, 32, 26, 0.17); --edge: rgba(23, 32, 26, 0.30); --dot-n: #6c746e;
+  --eq: #257de0; --neq: #ec4647; --halo: #e7eee3;
+  --f-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b110d; --fg: #e5ebe6; --muted: #93a096; --rule: #253029; --card: #131b16;
+    --field: #101914; --band: #212725; --line: #20312a; --goal: #34493c; --ez-l: #112039; --ez-r: #2a1517;
+    --ez-text: rgba(229, 235, 230, 0.13); --edge: rgba(229, 235, 230, 0.30); --dot-n: #a9b0ab;
+    --eq: #338ced; --neq: #eb6263; --halo: #101914; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b110d; --fg: #e5ebe6; --muted: #93a096; --rule: #253029; --card: #131b16;
+  --field: #101914; --band: #212725; --line: #20312a; --goal: #34493c; --ez-l: #112039; --ez-r: #2a1517;
+  --ez-text: rgba(229, 235, 230, 0.13); --edge: rgba(229, 235, 230, 0.30); --dot-n: #a9b0ab;
+  --eq: #338ced; --neq: #eb6263; --halo: #101914; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 22px; }
+.eyebrow { font: 500 12px/1.3 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font: 800 clamp(48px, 9vw, 92px)/0.9 var(--f-display); letter-spacing: 0.01em; margin: 6px 0 0; text-wrap: balance; }
+h1 .q { color: var(--muted); }
+h2 { font: 700 26px/1.1 var(--f-display); letter-spacing: 0.02em; margin: 0; text-wrap: balance; }
+.dek { max-width: 64ch; margin: 10px 0 0; color: var(--fg); }
+.note { max-width: 64ch; margin: 0; color: var(--muted); font-size: 14px; }
+a { color: inherit; text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+.board { display: grid; grid-template-columns: 1fr 1fr 1fr; border: 1px solid var(--rule); border-radius: 8px; background: var(--card); overflow: hidden; }
+.cell { padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+.cell + .cell { border-left: 1px solid var(--rule); }
+.cell .side { font: 700 20px/1 var(--f-display); letter-spacing: 0.03em; display: flex; align-items: center; gap: 7px; }
+.cell .side i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.cell .big { font: 800 40px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.cell .big small { font: 500 12px/1 var(--f-mono); color: var(--muted); margin-left: 4px; letter-spacing: 0.04em; text-transform: uppercase; }
+.cell .sub { font: 400 12.5px/1.4 var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.eqc { background: var(--eq); } .neqc { background: var(--neq); } .nc { background: var(--dot-n); }
+
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.controls .lab { font: 500 12px/1 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.chip { font: 500 13px/1 var(--f-body); color: var(--fg); background: transparent; border: 1px solid var(--rule); border-radius: 999px; padding: 7px 11px 7px 9px; display: inline-flex; gap: 7px; align-items: center; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--card); border-color: var(--muted); }
+.chip[aria-pressed="false"] { color: var(--muted); }
+.chip[aria-pressed="false"] svg { opacity: 0.35; }
+.chip svg { width: 12px; height: 12px; flex: none; }
+
+.field-wrap { position: relative; width: 100%; }
+canvas { display: block; width: 100%; touch-action: manipulation; cursor: crosshair; }
+.tip { position: absolute; pointer-events: none; max-width: min(320px, 80%); background: var(--card); color: var(--fg); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; font-size: 13px; line-height: 1.4; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12); z-index: 2; }
+.tip .id { font: 500 12px/1.3 var(--f-mono); color: var(--muted); }
+.tip .t { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { width: 12px; height: 12px; color: var(--fg); }
+
+.detail { border: 1px solid var(--rule); border-radius: 8px; background: var(--card); padding: 16px 18px; display: grid; gap: 8px; min-width: 0; }
+.detail .row1 { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font: 500 13px/1.2 var(--f-mono); color: var(--muted); }
+.pill { font: 600 12px/1 var(--f-body); border-radius: 999px; padding: 5px 9px; border: 1px solid var(--rule); color: var(--fg); display: inline-flex; gap: 6px; align-items: center; }
+.pill svg { width: 11px; height: 11px; }
+.detail .title { font: 600 18px/1.35 var(--f-body); margin: 0; overflow-wrap: anywhere; }
+.detail .plain { margin: 0; color: var(--muted); font-size: 14px; max-width: 75ch; overflow-wrap: anywhere; }
+.detail .facts { margin: 0; font: 400 12.5px/1.6 var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.read { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 28px; margin: 0; }
+.read div { min-width: 0; }
+.read dt { font: 700 17px/1.2 var(--f-display); letter-spacing: 0.03em; }
+.read dd { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+
+.tablebox { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 13.5px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 500 11.5px/1.3 var(--f-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .mono { font: 400 12px/1.3 var(--f-mono); color: var(--muted); display: block; margin-top: 2px; }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; display: grid; gap: 4px; }
+.err { color: var(--neq); font-weight: 600; }
+@media (max-width: 640px) {
+  .board { grid-template-columns: 1fr; }
+  .cell + .cell { border-left: 0; border-top: 1px solid var(--rule); }
+  .cell { grid-template-columns: 1fr auto; align-items: baseline; }
+  .cell .sub { grid-column: 1 / -1; }
+  .cell .big { font-size: 32px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow" id="snap">pequalnp.com · public record</p>
+    <h1>P <span class="q">?=</span> NP</h1>
+    <p class="dek">Every lemma the agent fleet has stated, laid out on a football field. Marks left of midfield pull toward <b>P = NP</b>, marks on the right pull toward <b>P ≠ NP</b>, and the grey middle pulls neither way. The farther a mark sits from midfield, the more its program's plan leans on it. Newest changes are at the top.</p>
+  </header>
+
+  <section class="board" id="board" aria-label="Lemma counts by side"></section>
+  <p class="note">The question stays on the 50. These are counts of checked steps, not odds: nothing checked here settles P vs NP, and the project says the same of its own tallies.</p>
+
+  <div class="controls" role="group" aria-label="Show lemmas by status">
+    <span class="lab">Show</span>
+    <span id="chips" style="display:contents"></span>
+  </div>
+
+  <div class="field-wrap" id="fieldWrap">
+    <canvas id="field" role="img" aria-label="Football field of lemmas"></canvas>
+    <div class="tip" id="tip" hidden></div>
+  </div>
+
+  <div class="legend" id="legend" aria-label="Legend"></div>
+
+  <section class="detail" id="detail" aria-live="polite"></section>
+
+  <section>
+    <h2>How to read the field</h2>
+    <dl class="read" style="margin-top:12px">
+      <div><dt>Left or right</dt><dd>The answer the lemma's program aims at, as the record states it. The P = NP algorithm search is on the left. Geometric complexity theory, circuit lower bounds and proof complexity are on the right. The library of known results and meta-complexity are marked neutral, so they sit in the grey area.</dd></div>
+      <div><dt>Distance from midfield</dt><dd>How much the program's plan leans on the lemma. From the middle out: known results, helpers, lemmas other lemmas rest on, rungs on the program's chain, the hard link it is stuck on, and its target in the end zone. This ranking is this page's rule, not the project's.</dd></div>
+      <div><dt>Height</dt><dd>When the lemma's status last changed, Pacific time, newest at the top. The record starts on Nov 22.</dd></div>
+      <div><dt>Shape</dt><dd>Status. The Lean checker decides "checked", with no partial credit. A refuted lemma is drawn as a node killed by a counterexample: its exact opposite was checked. It stays on its own side, because it ends an attempt there and adds nothing to the other side.</dd></div>
+      <div><dt>Outer ring</dt><dd>A rough attention signal: the project's own news covered the lemma, or a paper claims it. Attempt counts show in the details for lemmas on the two sides.</dd></div>
+      <div><dt>Lines</dt><dd>"Rests on" links from the record: the lemma is proved assuming the one it points to. There are few of them; most lemmas stand alone.</dd></div>
+    </dl>
+  </section>
+
+  <section style="display:grid;gap:12px">
+    <h2>Targets and chains</h2>
+    <div class="tablebox"><table id="table"><thead><tr><th>Program</th><th>Pulls toward</th><th>Target</th><th>Hard link</th><th>Chain checked</th><th>Lemmas</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <footer>
+    <span id="source">Data: the public export at data.pequalnp.com.</span>
+    <span>An independent view of public data. Not made by or affiliated with pequalnp.com.</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const STATUS = ['checked', 'conjecture', 'in_work', 'refuted', 'blocked', 'retired'];
+  const WORD = { checked: 'Checked', conjecture: 'Conjecture', in_work: 'In work', refuted: 'Refuted', blocked: 'Ruled dead', retired: 'Retired' };
+  const ROLE = ['', 'Chain rung', 'Hard link', 'Program target'];
+  const KIND = { 0: 'Open target', 1: 'Helper', 2: 'Known result, rebuilt' };
+  const SIDE_OF = { p_eq_np: -1, p_neq_np: 1, neutral: 0 };
+  const SIDE_WORD = { '-1': 'P = NP', '1': 'P ≠ NP', '0': 'Neither' };
+  const B = 0.2;            // half-width of the grey area, in field units (goal line = 1)
+  const TZ = 'America/Los_Angeles';
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => { const n = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else n.setAttribute(k, v); } n.append(...kids.filter((k) => k != null)); return n; };
+  const NS = 'http://www.w3.org/2000/svg';
+  const glyph = (st, colorVar) => {
+    const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 12 12'); s.setAttribute('aria-hidden', 'true');
+    const c = colorVar ? `var(${colorVar})` : 'currentColor';
+    const add = (tag, a) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(a)) n.setAttribute(k, v); s.append(n); };
+    if (st === 0) add('circle', { cx: 6, cy: 6, r: 4.5, fill: c });
+    else if (st === 1) add('circle', { cx: 6, cy: 6, r: 4, fill: 'none', stroke: c, 'stroke-width': 1.6 });
+    else if (st === 2) { add('circle', { cx: 6, cy: 6, r: 4.2, fill: 'none', stroke: c, 'stroke-width': 1.4 }); add('circle', { cx: 6, cy: 6, r: 1.8, fill: c }); }
+    else if (st === 3 || st === 4) { add('circle', { cx: 6, cy: 6, r: 3.6, fill: 'none', stroke: c, 'stroke-width': 1.3, opacity: 0.7 }); add('path', { d: 'M11 1 1 11', stroke: c, 'stroke-width': 1.8, fill: 'none', 'stroke-linecap': 'round' }); }
+    else add('path', { d: 'M2 6 H10', stroke: c, 'stroke-width': 1.8, fill: 'none', 'stroke-linecap': 'round' });
+    return s;
+  };
+  const fmtPT = (ms, opts) => new Intl.DateTimeFormat('en-US', { timeZone: TZ, ...opts }).format(new Date(ms));
+  const whenPT = (ms) => `${fmtPT(ms, { weekday: 'short', month: 'short', day: 'numeric' })}, ${fmtPT(ms, { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase()} PT`;
+  const n = (x) => x.toLocaleString('en-US');
+
+  let D, rows, P, side, t0, maxMin, idOf, U = [], V = [], X = [], Y = [], shown = new Set([0, 1, 2, 3, 4, 5]), showLinks = true, sel = -1, hov = -1, geo, grid, colors;
+  const canvas = $('#field'), ctx = canvas.getContext('2d'), wrap = $('#fieldWrap'), tip = $('#tip');
+
+  function hash(a, b, salt) {
+    let x = Math.imul(a + 1, 73856093) ^ Math.imul(b + 7, 19349663) ^ Math.imul(salt + 3, 83492791);
+    x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); x ^= x >>> 16;
+    return (x >>> 0) / 4294967296;
+  }
+  // How far out from midfield (0 at the grey area's edge, 1 at the goal line). This page's own ranking.
+  function reach(r, h) {
+    const role = r[7], kind = r[8], used = r[6], layer = r[4];
+    if (role === 2) return 0.83 + 0.1 * h;                       // hard link
+    if (role === 1) return 0.64 + 0.15 * h;                      // chain rung
+    if (kind === 0) return 0.5 + 0.1 * h;                        // open target off the chain
+    if (used > 0) return Math.min(0.6, 0.3 + 0.045 * Math.min(used, 5) + 0.06 * h); // something rests on it
+    if (kind === 2) return 0.02 + 0.1 * h;                       // known result, rebuilt
+    return 0.08 + 0.16 * h + 0.02 * Math.min(layer, 2);          // helper
+  }
+
+  function init(data) {
+    D = data; rows = data.rows; P = data.programs;
+    side = P.map((p) => SIDE_OF[p.aims_at] ?? 0);
+    t0 = Date.parse(data.source.started_at);
+    maxMin = Math.max((Date.parse(data.source.generated_at) - t0) / 60000, ...rows.map((r) => r[3]));
+    idOf = (i) => { const r = rows[i]; return `L-${P[r[0]].key}-${String(r[1]).padStart(3, '0')}`; };
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i], s = side[r[0]], h = hash(r[0], r[1], 1);
+      let u;
+      if (r[7] === 3) u = s === 0 ? 0 : s * 1.075;                    // targets: in the end zone, or on the 50
+      else if (s === 0) u = (h * 2 - 1) * B * (r[7] ? 0.6 : 0.92);
+      else u = s * (B + (1 - B) * reach(r, h));
+      U[i] = u; V[i] = r[3] / maxMin;
+    }
+    $('#snap').textContent = `pequalnp.com · public record · snapshot ${whenPT(Date.parse(data.source.generated_at))}`;
+    $('#source').textContent = `Data: the public export at data.pequalnp.com (layout ${data.source.layout}, version ${data.source.version}), read ${whenPT(Date.parse(data.source.generated_at))}. ${n(rows.length)} lemmas, ${n(data.edges.length)} rests-on links.`;
+    board(); chips(); legend(); table();
+    const start = idOf(rows.findIndex((r) => r[7] === 3 && side[r[0]] === 1)) ;
+    select(rows.findIndex((r, i) => idOf(i) === start));
+    new ResizeObserver(() => { layout(); draw(); }).observe(wrap);
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => draw());
+    new MutationObserver(() => draw()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    layout(); draw();
+    if (document.fonts) document.fonts.ready.then(() => draw());
+  }
+
+  function counts(s) {
+    const c = { total: 0, checked: 0, open: 0, refuted: 0, retired: 0 };
+    for (const r of rows) if (side[r[0]] === s) { c.total++; if (r[2] === 0) c.checked++; else if (r[2] === 1 || r[2] === 2) c.open++; else if (r[2] === 3 || r[2] === 4) c.refuted++; else c.retired++; }
+    return c;
+  }
+  function board() {
+    const box = $('#board'); box.replaceChildren();
+    for (const [s, cls, label] of [[-1, 'eqc', 'Toward P = NP'], [0, 'nc', 'Grey area'], [1, 'neqc', 'Toward P ≠ NP']]) {
+      const c = counts(s);
+      box.append(el('div', { class: 'cell' },
+        el('div', { class: 'side' }, el('i', { class: cls }), label),
+        el('div', { class: 'big' }, n(c.checked), el('small', { text: 'checked' })),
+        el('div', { class: 'sub', text: `${n(c.total)} lemmas · ${n(c.open)} open · ${n(c.refuted)} refuted · ${n(c.retired)} retired` })));
+    }
+  }
+  function chips() {
+    const box = $('#chips');
+    const items = [[0, 'Checked'], [1, 'Conjecture'], [2, 'In work'], [3, 'Refuted'], [5, 'Retired']];
+    for (const [st, label] of items) {
+      const b = el('button', { class: 'chip', type: 'button', id: `chip-${st}`, 'aria-pressed': 'true' }, glyph(st), label);
+      b.addEventListener('click', () => {
+        const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(on));
+        for (const s of st === 3 ? [3, 4] : [st]) on ? shown.add(s) : shown.delete(s);
+        buildGrid(); draw();
+      });
+      box.append(b);
+    }
+    const l = el('button', { class: 'chip', type: 'button', id: 'chip-links', 'aria-pressed': 'true' }, (() => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 12 12'); s.setAttribute('aria-hidden', 'true'); const p = document.createElementNS(NS, 'path'); p.setAttribute('d', 'M1.5 10.5 10.5 1.5'); p.setAttribute('stroke', 'currentColor'); p.setAttribute('stroke-width', '1.4'); s.append(p); return s; })(), 'Rests-on links');
+    l.addEventListener('click', () => { showLinks = l.getAttribute('aria-pressed') !== 'true'; l.setAttribute('aria-pressed', String(showLinks)); draw(); });
+    box.append(l);
+  }
+  function legend() {
+    const box = $('#legend');
+    box.append(el('span', {}, glyph(0, '--eq'), 'Pulls toward P = NP'), el('span', {}, glyph(0, '--neq'), 'Pulls toward P ≠ NP'), el('span', {}, glyph(0, '--dot-n'), 'Pulls neither way (drawn small: 16,000+ lemmas)'));
+    for (const [st, w] of [[0, 'Checked by Lean'], [1, 'Conjecture'], [2, 'In work'], [3, 'Killed by a counterexample'], [5, 'Retired']]) box.append(el('span', {}, glyph(st), w));
+    box.append(el('span', {}, (() => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 12 12'); s.setAttribute('aria-hidden', 'true'); const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', 6); c.setAttribute('cy', 6); c.setAttribute('r', 5); c.setAttribute('fill', 'none'); c.setAttribute('stroke', 'currentColor'); c.setAttribute('stroke-width', 1); s.append(c); const d = document.createElementNS(NS, 'circle'); d.setAttribute('cx', 6); d.setAttribute('cy', 6); d.setAttribute('r', 2.4); d.setAttribute('fill', 'currentColor'); s.append(d); return s; })(), 'Outer ring: in the project news or a paper'));
+    box.append(el('span', {}, (() => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 12 12'); s.setAttribute('aria-hidden', 'true'); const c = document.createElementNS(NS, 'circle'); c.setAttribute('cx', 6); c.setAttribute('cy', 6); c.setAttribute('r', 5); c.setAttribute('fill', 'none'); c.setAttribute('stroke', 'currentColor'); c.setAttribute('stroke-width', 1.2); c.setAttribute('stroke-dasharray', '2 1.6'); s.append(c); return s; })(), 'Larger mark: target, hard link or chain rung'));
+  }
+  function table() {
+    const tb = $('#table tbody'); tb.replaceChildren();
+    const byId = new Map(rows.map((r, i) => [idOf(i), i]));
+    const st = (id) => (byId.has(id) ? WORD[STATUS[rows[byId.get(id)][2]]] : '');
+    const order = [...P.keys()].sort((a, b) => side[a] - side[b]);
+    for (const pi of order) {
+      const p = P[pi], chain = p.chain.filter(Boolean), done = chain.filter((id) => st(id) === 'Checked').length;
+      const total = rows.filter((r) => r[0] === pi).length;
+      const cellFor = (id) => (id ? el('td', {}, D.titles[id] || id, el('span', { class: 'mono', text: `${id} · ${st(id)}` })) : el('td', { text: 'None named' }));
+      tb.append(el('tr', {}, el('td', {}, p.title, el('span', { class: 'mono', text: p.id })), el('td', { text: SIDE_WORD[String(side[pi])] }), cellFor(p.target), cellFor(p.hard), el('td', { class: 'num', text: `${done} of ${chain.length}` }), el('td', { class: 'num', text: n(total) })));
+    }
+  }
+
+  function layout() {
+    const W = wrap.clientWidth, H = Math.round(Math.min(860, Math.max(560, W * 0.78)));
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const left = W < 520 ? 34 : 46, top = 40, bottom = 34;
+    const fx0 = left, fx1 = W - 2, fy0 = top, fy1 = H - bottom;
+    const ez = Math.max(26, (fx1 - fx0) * 0.075), cx = (fx0 + fx1) / 2, half = (fx1 - fx0) / 2 - ez;
+    geo = { W, H, fx0, fx1, fy0, fy1, ez, cx, half, small: W < 520 };
+    for (let i = 0; i < rows.length; i++) { X[i] = cx + U[i] * half; Y[i] = fy1 - 8 - V[i] * (fy1 - fy0 - 16); }
+    buildGrid();
+  }
+  function buildGrid() {
+    grid = new Map();
+    for (let i = 0; i < rows.length; i++) {
+      if (!shown.has(rows[i][2])) continue;
+      const k = `${Math.floor(X[i] / 14)},${Math.floor(Y[i] / 14)}`;
+      (grid.get(k) || grid.set(k, []).get(k)).push(i);
+    }
+  }
+  function nearest(x, y, rad) {
+    let best = -1, bd = rad * rad, bw = -1;
+    const gx = Math.floor(x / 14), gy = Math.floor(y / 14);
+    for (let a = gx - 1; a <= gx + 1; a++) for (let b = gy - 1; b <= gy + 1; b++) for (const i of grid.get(`${a},${b}`) || []) {
+      const d = (X[i] - x) ** 2 + (Y[i] - y) ** 2, w = side[rows[i][0]] !== 0 || rows[i][7] ? 1 : 0; // side marks win ties over the dense middle
+      if (d <= bd + (w > bw ? 30 : 0) && (w > bw || d < bd)) { best = i; bd = Math.min(d, bd); bw = Math.max(w, bw); }
+    }
+    return best;
+  }
+
+  function tokens() {
+    const cs = getComputedStyle(document.documentElement), g = (k) => cs.getPropertyValue(k).trim();
+    return { field: g('--field'), band: g('--band'), line: g('--line'), goal: g('--goal'), ezl: g('--ez-l'), ezr: g('--ez-r'), ezt: g('--ez-text'), edge: g('--edge'), dotn: g('--dot-n'), eq: g('--eq'), neq: g('--neq'), fg: g('--fg'), muted: g('--muted'), card: g('--card'), halo: g('--halo') };
+  }
+  function markAt(x, y, st, r, col) {
+    ctx.lineCap = 'round';
+    if (st === 0) { ctx.beginPath(); ctx.arc(x, y, r + 1.5, 0, 7); ctx.fillStyle = colors.field; ctx.fill(); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = col; ctx.fill(); }
+    else if (st === 1) { ctx.beginPath(); ctx.arc(x, y, r - 0.6, 0, 7); ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke(); }
+    else if (st === 2) { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke(); ctx.beginPath(); ctx.arc(x, y, r * 0.42, 0, 7); ctx.fillStyle = col; ctx.fill(); }
+    else if (st === 3 || st === 4) { // a node killed by a counterexample: hollow, struck through
+      ctx.beginPath(); ctx.arc(x, y, r - 0.6, 0, 7); ctx.strokeStyle = col; ctx.lineWidth = 1.2; ctx.stroke();
+      const a = r + 1.6; ctx.beginPath(); ctx.moveTo(x + a * 0.75, y - a * 0.75); ctx.lineTo(x - a * 0.75, y + a * 0.75); ctx.lineWidth = 1.7; ctx.stroke(); }
+    else { ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x + r, y); ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke(); }
+  }
+  function draw() {
+    if (!geo) return;
+    colors = tokens();
+    const { W, H, fx0, fx1, fy0, fy1, ez, cx, half, small } = geo, c = colors;
+    ctx.clearRect(0, 0, W, H);
+    // the field
+    ctx.fillStyle = c.field; ctx.fillRect(fx0, fy0, fx1 - fx0, fy1 - fy0);
+    ctx.fillStyle = c.ezl; ctx.fillRect(fx0, fy0, ez, fy1 - fy0);
+    ctx.fillStyle = c.ezr; ctx.fillRect(fx1 - ez, fy0, ez, fy1 - fy0);
+    ctx.fillStyle = c.band; ctx.fillRect(cx - B * half, fy0, 2 * B * half, fy1 - fy0);
+    // yard lines at the tier edges, goal lines, midfield
+    const tiers = [0.26, 0.62, 0.81];
+    ctx.lineWidth = 1; ctx.strokeStyle = c.line;
+    for (const s of [-1, 1]) for (const t of tiers) { const x = Math.round(cx + s * (B + (1 - B) * t) * half) + 0.5; ctx.beginPath(); ctx.moveTo(x, fy0); ctx.lineTo(x, fy1); ctx.stroke(); }
+    for (let k = 1; k < 20; k++) { const x = Math.round(cx + (k / 10 - 1) * half) + 0.5; ctx.beginPath(); ctx.moveTo(x, fy0); ctx.lineTo(x, fy0 + 5); ctx.moveTo(x, fy1 - 5); ctx.lineTo(x, fy1); ctx.stroke(); }
+    ctx.strokeStyle = c.goal; ctx.lineWidth = 2;
+    for (const x of [cx - half, cx + half]) { ctx.beginPath(); ctx.moveTo(x, fy0); ctx.lineTo(x, fy1); ctx.stroke(); }
+    ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(cx, fy0); ctx.lineTo(cx, fy1); ctx.stroke(); ctx.setLineDash([]);
+    // end-zone lettering
+    ctx.save(); ctx.fillStyle = c.ezt; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const ezSize = Math.min(ez * 0.78, 54); ctx.font = `800 ${ezSize}px "Big Shoulders Display", "Arial Narrow", sans-serif`;
+    ctx.translate(fx0 + ez / 2, (fy0 + fy1) / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('P = NP', 0, 0); ctx.restore();
+    ctx.save(); ctx.fillStyle = c.ezt; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `800 ${ezSize}px "Big Shoulders Display", "Arial Narrow", sans-serif`;
+    ctx.translate(fx1 - ez / 2, (fy0 + fy1) / 2); ctx.rotate(Math.PI / 2); ctx.fillText('P ≠ NP', 0, 0); ctx.restore();
+    // time: a line and a label at each Pacific midnight
+    ctx.font = `500 ${small ? 10 : 11}px "IBM Plex Mono", ui-monospace, monospace`; ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
+    const hourMs = 3600000, end = t0 + maxMin * 60000;
+    for (let t = Math.ceil(t0 / hourMs) * hourMs; t <= end; t += hourMs) {
+      if (fmtPT(t, { hour: 'numeric', hourCycle: 'h23' }) !== '0' && fmtPT(t, { hour: '2-digit', hourCycle: 'h23' }) !== '00') continue;
+      const y = Math.round(fy1 - 8 - ((t - t0) / 60000 / maxMin) * (fy1 - fy0 - 16)) + 0.5;
+      ctx.strokeStyle = c.line; ctx.lineWidth = 1; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(fx0, y); ctx.lineTo(fx1, y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = c.muted; ctx.fillText(fmtPT(t, { weekday: 'short' }), fx0 - 6, y - 7); ctx.fillText(fmtPT(t, { day: 'numeric' }), fx0 - 6, y + 7);
+    }
+    ctx.fillStyle = c.muted; ctx.fillText('now', fx0 - 6, fy0 + 8);
+    // tier labels along the bottom sideline
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.font = `500 ${small ? 9.5 : 11}px "IBM Plex Mono", ui-monospace, monospace`; ctx.fillStyle = c.muted;
+    const lab = ['helpers', 'rested on', 'chain', 'hard link'], edges = [0, ...tiers, 1];
+    if (!small) {
+      for (const s of [-1, 1]) for (let k = 0; k < 4; k++) { const m = (edges[k] + edges[k + 1]) / 2; ctx.fillText(lab[k], cx + s * (B + (1 - B) * m) * half, fy1 + 8); }
+      ctx.fillText('target', fx0 + ez / 2, fy1 + 8); ctx.fillText('target', fx1 - ez / 2, fy1 + 8);
+    } else { ctx.textAlign = 'left'; ctx.fillText('◀ farther out: more of the plan rests on it ▶', fx0, fy1 + 8); ctx.textAlign = 'center'; }
+    if (!small) ctx.fillText('grey area', cx, fy1 + 8);
+    // links
+    const linked = new Set();
+    if (sel >= 0) for (const [a, b] of D.edges) if (a === sel || b === sel) { linked.add(a); linked.add(b); }
+    if (showLinks) {
+      ctx.lineWidth = 1; ctx.strokeStyle = c.edge; ctx.beginPath();
+      for (const [a, b] of D.edges) if (shown.has(rows[a][2]) && shown.has(rows[b][2]) && !(linked.has(a) && linked.has(b))) { ctx.moveTo(X[a], Y[a]); ctx.lineTo(X[b], Y[b]); }
+      ctx.stroke();
+    }
+    if (sel >= 0) { ctx.lineWidth = 1.6; ctx.strokeStyle = c.fg; ctx.beginPath(); for (const [a, b] of D.edges) if (a === sel || b === sel) { ctx.moveTo(X[a], Y[a]); ctx.lineTo(X[b], Y[b]); } ctx.stroke(); }
+    // the grey middle: 16,000+ lemmas, drawn small and faint, checked brightest
+    const alpha = [0.5, 0.22, 0.5, 0.12, 0.12, 0.07];
+    ctx.fillStyle = c.dotn;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i]; if (side[r[0]] !== 0 || r[7] || !shown.has(r[2])) continue;
+      ctx.globalAlpha = alpha[r[2]]; ctx.fillRect(X[i] - 1, Y[i] - 1, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 1; ctx.strokeStyle = c.fg;
+    for (let i = 0; i < rows.length; i++) { // grey-area lemmas the project wrote about
+      const r = rows[i]; if (side[r[0]] !== 0 || r[7] || !shown.has(r[2]) || !(r[10] || r[11])) continue;
+      ctx.beginPath(); ctx.arc(X[i], Y[i], 3.5, 0, 7); ctx.stroke();
+    }
+    // the sides, then plan marks on top
+    const sz = small ? 3.4 : 4;
+    for (const pass of [0, 1]) for (let i = 0; i < rows.length; i++) {
+      const r = rows[i], s = side[r[0]], big = r[7] > 0;
+      if ((pass === 0) === big || (s === 0 && !big) || !shown.has(r[2])) continue;
+      const col = s < 0 ? c.eq : s > 0 ? c.neq : c.dotn;
+      const rad = big ? sz + r[7] * 1.1 : sz;
+      ctx.globalAlpha = r[2] === 5 ? 0.45 : r[2] >= 3 ? 0.7 : 1;
+      markAt(X[i], Y[i], r[2], rad, col);
+      if (r[10] || r[11]) { ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(X[i], Y[i], rad + (big ? 6 : 3), 0, 7); ctx.lineWidth = 1; ctx.strokeStyle = c.fg; ctx.stroke(); }
+      if (big) { ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(X[i], Y[i], rad + 3.2, 0, 7); ctx.setLineDash([2, 2]); ctx.lineWidth = 1; ctx.strokeStyle = col; ctx.stroke(); ctx.setLineDash([]); }
+    }
+    ctx.globalAlpha = 1;
+    // target labels
+    ctx.font = `600 ${small ? 10 : 11.5}px "Inter", system-ui, sans-serif`; ctx.textBaseline = 'middle';
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i]; if (r[7] !== 3 || !shown.has(r[2])) continue;
+      const s = side[r[0]], name = P[r[0]].title.replace(/ via algorithms| search| of known results/, ''), txt = `${name} target`;
+      ctx.textAlign = s > 0 ? 'right' : 'left';
+      const x = s > 0 ? X[i] - 14 : s < 0 ? X[i] + 14 : X[i] + 13, y = Y[i];
+      ctx.lineWidth = 3.5; ctx.strokeStyle = c.halo; ctx.lineJoin = 'round'; ctx.strokeText(txt, x, y); ctx.fillStyle = c.fg; ctx.fillText(txt, x, y);
+    }
+    // the question on the 50
+    ctx.font = `800 ${small ? 20 : 24}px "Big Shoulders Display", "Arial Narrow", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const q = 'P ?= NP', qw = ctx.measureText(q).width + 22;
+    ctx.fillStyle = c.card; ctx.strokeStyle = c.goal; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx - qw / 2, 6, qw, 28, 14) : ctx.rect(cx - qw / 2, 6, qw, 28); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = c.fg; ctx.fillText(q, cx, 21);
+    ctx.font = `600 ${small ? 11 : 13}px "Big Shoulders Display", "Arial Narrow", sans-serif`; ctx.fillStyle = c.muted;
+    ctx.textAlign = 'left'; ctx.fillText(small ? '◀ P = NP' : '◀ PULLS TOWARD P = NP', fx0 + 2, 21);
+    ctx.textAlign = 'right'; ctx.fillText(small ? 'P ≠ NP ▶' : 'PULLS TOWARD P ≠ NP ▶', fx1 - 2, 21);
+    // selection and hover rings
+    for (const [i, w] of [[sel, 2], [hov, 1.5]]) {
+      if (i < 0) continue;
+      ctx.beginPath(); ctx.arc(X[i], Y[i], (rows[i][7] ? sz + rows[i][7] * 1.1 : sz) + 5, 0, 7); ctx.lineWidth = w; ctx.strokeStyle = c.fg; ctx.stroke();
+    }
+    canvas.setAttribute('aria-label', `Football field of ${n(rows.length)} lemmas. ${counts(-1).checked} checked toward P = NP, ${n(counts(0).checked)} checked in the grey area, ${counts(1).checked} checked toward P ≠ NP. The table below lists each program's target.`);
+  }
+
+  function facts(i) {
+    const r = rows[i], id = idOf(i), p = P[r[0]];
+    const parts = [`Program: ${p.title}`, `Pulls toward: ${SIDE_WORD[String(side[r[0]])]}`];
+    if (r[7]) parts.push(`Plan role: ${ROLE[r[7]]}`);
+    if (KIND[r[8]]) parts.push(`Kind: ${KIND[r[8]]}`);
+    parts.push(`Rests on ${r[5]} · rested on by ${r[6]}`, `Status since ${whenPT(t0 + r[3] * 60000)}`);
+    if (r[12] >= 0) parts.push(`Attempts: ${r[12]}${r[13] > 0 ? ` (${r[13]} died)` : ''}`);
+    if (r[10]) parts.push(`In ${r[10]} news ${r[10] === 1 ? 'article' : 'articles'}`);
+    if (r[11]) parts.push('Claimed in a published paper');
+    if (r[9]) parts.push('Proved by an outside contributor');
+    return { id, parts };
+  }
+  function select(i) {
+    sel = i; const box = $('#detail'); box.replaceChildren();
+    if (i < 0) { box.append(el('p', { class: 'plain', text: 'Tap or hover any mark on the field to see its lemma.' })); draw(); return; }
+    const r = rows[i], { id, parts } = facts(i), st = STATUS[r[2]];
+    const link = el('a', { href: `https://pequalnp.com/lemma#${id}`, target: '_blank', rel: 'noopener noreferrer', text: 'Open on pequalnp.com ↗' });
+    box.append(
+      el('div', { class: 'row1' }, el('span', { text: id }), el('span', { class: 'pill' }, glyph(r[2]), WORD[st]), r[7] ? el('span', { class: 'pill', text: ROLE[r[7]] }) : null, link),
+      el('p', { class: 'title', text: D.titles[id] || (side[r[0]] === 0 ? 'A lemma in the grey area. Its full statement is on pequalnp.com.' : 'Title not loaded. Its full statement is on pequalnp.com.') }),
+      D.plain[id] ? el('p', { class: 'plain', text: D.plain[id] }) : null,
+      el('p', { class: 'facts', text: parts.join('  ·  ') }));
+    draw();
+  }
+  function showTip(i, x, y) {
+    if (i < 0) { tip.hidden = true; return; }
+    const r = rows[i], id = idOf(i);
+    tip.replaceChildren(el('div', { class: 'id', text: `${id} · ${WORD[STATUS[r[2]]]}${r[7] ? ` · ${ROLE[r[7]]}` : ''}` }), el('div', { class: 't', text: D.titles[id] || P[r[0]].title }));
+    tip.hidden = false;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.left = `${Math.max(4, Math.min(geo.W - tw - 4, x + 14))}px`;
+    tip.style.top = `${Math.max(4, y - th - 12 < 0 ? y + 16 : y - th - 12)}px`;
+  }
+  const pt = (e) => { const b = canvas.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+  canvas.addEventListener('pointermove', (e) => { if (!grid || e.pointerType === 'touch') return; const [x, y] = pt(e); const i = nearest(x, y, 12); if (i !== hov) { hov = i; draw(); } showTip(i, x, y); });
+  canvas.addEventListener('pointerleave', () => { hov = -1; tip.hidden = true; draw(); });
+  canvas.addEventListener('click', (e) => { const [x, y] = pt(e); const i = nearest(x, y, 20); if (i >= 0) { select(i); showTip(i, x, y); } });
+
+  fetch('data.json').then((r) => { if (!r.ok) throw new Error(`data.json: HTTP ${r.status}`); return r.json(); }).then(init).catch((e) => {
+    $('#detail').replaceChildren(el('p', { class: 'err', text: `The data did not load (${e.message}). Reload the page to try again.` }));
+  });
+})();
+</script>

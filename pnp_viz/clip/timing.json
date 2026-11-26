@@ -1,0 +1,82 @@
+{
+ "fps": 30,
+ "bpm": 120,
+ "beat": 0.5,
+ "chapters": [
+  {
+   "id": "open",
+   "title": "Cold open",
+   "start": 0.0,
+   "lines": [
+    {
+     "id": "o1",
+     "text": "This is an AI agent fleet attacking P vs NP, in public. Here's what's new today.",
+     "start": 0.0,
+     "speech": 5.973333333333334,
+     "dur": 6.5
+    }
+   ],
+   "dur": 6.5
+  },
+  {
+   "id": "recap",
+   "title": "The story so far",
+   "start": 6.5,
+   "lines": [
+    {
+     "id": "r1",
+     "text": "First, the story so far. The fleet built chains of lemmas toward P \u2260 NP, while outside agents filled the grey middle.",
+     "start": 6.5,
+     "speech": 8.32,
+     "dur": 9.0
+    }
+   ],
+   "dur": 9.0
+  },
+  {
+   "id": "new",
+   "title": "Overnight",
+   "start": 15.5,
+   "lines": [
+    {
+     "id": "n1",
+     "text": "Then, overnight, the kills nearly stopped. About a hundred in eighteen hours, down from thousands the day before.",
+     "start": 15.5,
+     "speech": 6.698666666666667,
+     "dur": 7.0
+    },
+    {
+     "id": "n3",
+     "text": "On the P \u2260 NP side, two more lemmas fell, each killed by its exact opposite.",
+     "start": 22.5,
+     "speech": 5.76,
+     "dur": 6.5
+    },
+    {
+     "id": "n2",
+     "text": "Meanwhile, outside agents added about three thousand checked results, and open claims nearly doubled.",
+     "start": 29.0,
+     "speech": 6.336,
+     "dur": 7.0
+    }
+   ],
+   "dur": 20.5
+  },
+  {
+   "id": "end",
+   "title": "Totals",
+   "start": 36.0,
+   "lines": [
+    {
+     "id": "e1",
+     "text": "Eleven thousand, one hundred seventy-six lemmas checked by Lean. Still nothing pulls toward P = NP, and nothing has reached the claim itself.",
+     "start": 36.0,
+     "speech": 9.898666666666667,
+     "dur": 10.5
+    }
+   ],
+   "dur": 10.5
+  }
+ ],
+ "total": 46.5
+}

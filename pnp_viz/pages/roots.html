@@ -1,0 +1,633 @@
+<title>P vs NP Roots</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: a cross-section of ground. Sky above, program targets at the surface, roots growing down through soil, known results as bedrock. */
+:root {
+  --bg: #f4f3ef; --fg: #1d1a16; --muted: #5f5850; --rule: #d9d3c9; --card: #ffffff;
+  --sky: #eef2f5; --soil: #ebe4d8; --soil-deep: #e0d6c7; --rock: #cdc7bd; --rock-line: #bab2a6; --ground: #7d6f5c;
+  --dot-n: #6f665b; --edge: rgba(29, 26, 22, 0.32); --halo: #ebe4d8;
+  --eq: #257de0; --neq: #ec4647;
+  --f-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d0b09; --fg: #ece6dd; --muted: #a39a8e; --rule: #2c2722; --card: #16130f;
+    --sky: #0a0e13; --soil: #17120e; --soil-deep: #100c09; --rock: #26221e; --rock-line: #38322c; --ground: #8a7b66;
+    --dot-n: #b4aa9b; --edge: rgba(236, 230, 221, 0.32); --halo: #17120e;
+    --eq: #338ced; --neq: #eb6263; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d0b09; --fg: #ece6dd; --muted: #a39a8e; --rule: #2c2722; --card: #16130f;
+  --sky: #0a0e13; --soil: #17120e; --soil-deep: #100c09; --rock: #26221e; --rock-line: #38322c; --ground: #8a7b66;
+  --dot-n: #b4aa9b; --edge: rgba(236, 230, 221, 0.32); --halo: #17120e;
+  --eq: #338ced; --neq: #eb6263; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 20px; }
+.eyebrow { font: 500 12px/1.3 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font: 800 clamp(44px, 8vw, 84px)/0.9 var(--f-display); letter-spacing: 0.01em; margin: 6px 0 0; text-wrap: balance; }
+h2 { font: 700 26px/1.1 var(--f-display); letter-spacing: 0.02em; margin: 0; text-wrap: balance; }
+.dek { max-width: 66ch; margin: 10px 0 0; }
+.note { max-width: 66ch; margin: 0; color: var(--muted); font-size: 14px; }
+a { color: inherit; text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+.player { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; align-items: center; border: 1px solid var(--rule); border-radius: 8px; background: var(--card); padding: 12px 14px; }
+.play { font: 700 17px/1 var(--f-display); letter-spacing: 0.04em; text-transform: uppercase; background: var(--fg); color: var(--bg); border: 0; border-radius: 999px; padding: 10px 18px 9px; cursor: pointer; min-width: 132px; }
+.scrub { display: grid; gap: 4px; min-width: 0; }
+.scrub input { width: 100%; accent-color: var(--fg); margin: 0; }
+.scrub .when { font: 500 13px/1.2 var(--f-mono); color: var(--fg); font-variant-numeric: tabular-nums; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.scrub .when span:last-child { color: var(--muted); }
+.tally { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--rule); padding-top: 10px; }
+.tally div { min-width: 0; font: 400 12.5px/1.35 var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; padding: 0 14px; }
+.tally div:first-child { padding-left: 0; }
+.tally div + div { border-left: 1px solid var(--rule); }
+.tally b { display: flex; align-items: center; gap: 6px; font: 700 18px/1.1 var(--f-display); letter-spacing: 0.03em; color: var(--fg); }
+.tally b i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.tally b em { font-style: normal; font-size: 26px; font-variant-numeric: tabular-nums; margin-left: auto; }
+.eqc { background: var(--eq); } .neqc { background: var(--neq); } .nc { background: var(--dot-n); }
+
+.meter { border: 1px solid var(--rule); border-radius: 8px; background: var(--card); padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
+.mhead { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; }
+.mhead h2 { font-size: 22px; }
+.mval { font: 800 36px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.mval small { font: 500 12px/1 var(--f-mono); color: var(--muted); margin-left: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+.rope { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+.rope .end { font: 700 17px/1 var(--f-display); letter-spacing: 0.03em; white-space: nowrap; }
+.rope .l { color: var(--eq); } .rope .r { color: var(--neq); }
+.track { position: relative; height: 24px; }
+.track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 4px; transform: translateY(-50%); border-radius: 2px; background: repeating-linear-gradient(115deg, var(--ground) 0 5px, transparent 5px 8px); }
+.track .mid { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--muted); }
+.track .prior { position: absolute; top: 4px; bottom: 4px; width: 2px; margin-left: -1px; background: var(--muted); }
+.track .knot { position: absolute; top: 50%; width: 18px; height: 18px; border-radius: 50%; background: var(--fg); border: 3px solid var(--card); box-shadow: 0 0 0 1px var(--fg); transform: translate(-50%, -50%); }
+.sparkbox { display: grid; gap: 2px; }
+.spark { width: 100%; height: 84px; display: block; }
+.spark .base { stroke: var(--rule); }
+.spark .half { stroke: var(--muted); stroke-dasharray: 4 4; }
+.spark .line { fill: none; stroke: var(--neq); stroke-width: 2; }
+.spark .now { stroke: var(--fg); stroke-width: 1; }
+.sparkaxis { display: flex; justify-content: space-between; font: 400 11.5px/1.3 var(--f-mono); color: var(--muted); }
+.mctl { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; }
+.mctl .grp { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.mctl .lab { font: 500 12px/1 var(--f-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.seg { font: 500 13px/1 var(--f-body); color: var(--fg); background: transparent; border: 1px solid var(--rule); border-radius: 999px; padding: 7px 11px; cursor: pointer; }
+.seg[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.mctl .sl { display: grid; gap: 4px; min-width: min(320px, 100%); flex: 1; }
+.mctl .sl label { font-size: 13px; color: var(--muted); }
+.mctl .sl input { width: 100%; accent-color: var(--fg); margin: 0; }
+.scroll { overflow-x: auto; border-radius: 8px; border: 1px solid var(--rule); -webkit-overflow-scrolling: touch; }
+.stage { position: relative; min-width: 920px; }
+canvas { display: block; width: 100%; touch-action: pan-x pan-y; cursor: crosshair; }
+.tip { position: absolute; pointer-events: none; max-width: 320px; background: var(--card); color: var(--fg); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; font-size: 13px; line-height: 1.4; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14); z-index: 2; }
+.tip .id { font: 500 12px/1.3 var(--f-mono); color: var(--muted); }
+.tip .t { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; }
+.hint { font: 400 12.5px/1.4 var(--f-mono); color: var(--muted); margin: 0; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { width: 14px; height: 14px; color: var(--fg); flex: none; }
+
+.detail { border: 1px solid var(--rule); border-radius: 8px; background: var(--card); padding: 16px 18px; display: grid; gap: 8px; min-width: 0; }
+.detail .row1 { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font: 500 13px/1.2 var(--f-mono); color: var(--muted); }
+.pill { font: 600 12px/1 var(--f-body); border-radius: 999px; padding: 5px 9px; border: 1px solid var(--rule); color: var(--fg); display: inline-flex; gap: 6px; align-items: center; }
+.pill svg { width: 11px; height: 11px; }
+.detail .title { font: 600 18px/1.35 var(--f-body); margin: 0; overflow-wrap: anywhere; }
+.detail .plain { margin: 0; color: var(--muted); font-size: 14px; max-width: 78ch; overflow-wrap: anywhere; }
+.detail .facts { margin: 0; font: 400 12.5px/1.6 var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.read { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px 28px; margin: 12px 0 0; }
+.read div { min-width: 0; }
+.read dt { font: 700 17px/1.2 var(--f-display); letter-spacing: 0.03em; }
+.read dd { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+.weights { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.weights li { font: 500 12.5px/1 var(--f-mono); border: 1px solid var(--rule); border-radius: 999px; padding: 6px 10px; background: var(--card); }
+
+.tablebox { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 13.5px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 500 11.5px/1.3 var(--f-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+td.words { font: 400 12px/1.45 var(--f-mono); color: var(--muted); }
+tr.group td { font: 700 15px/1.2 var(--f-display); letter-spacing: 0.03em; background: var(--bg); }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; display: grid; gap: 4px; }
+.err { color: var(--neq); font-weight: 600; }
+@media (max-width: 640px) {
+  .player { grid-template-columns: 1fr; }
+  .play { width: 100%; }
+  .tally { grid-template-columns: 1fr; gap: 8px; }
+  .tally div { padding: 0; }
+  .tally div + div { border-left: 0; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow" id="snap">pequalnp.com · public record</p>
+    <h1>Roots of P vs NP</h1>
+    <p class="dek">The agent fleet's lemmas drawn as root systems under the ground. Each program's target sits just below the surface, waiting to be proved. Its chain of checked steps is the taproot, and its themes branch out as roots. Known results lie underneath as bedrock. Press play to watch three and a half days of growth.</p>
+  </header>
+
+  <section class="player" aria-label="Playback">
+    <button class="play" id="play" type="button">Play growth</button>
+    <div class="scrub">
+      <label class="when" for="time"><span id="when">Loading the record…</span><span id="elapsed"></span></label>
+      <input type="range" id="time" min="0" max="100" step="1" value="100" disabled>
+    </div>
+    <div class="tally" id="tally" aria-live="off"></div>
+  </section>
+
+  <section class="meter" aria-label="Overall proposition">
+    <div class="mhead"><h2>Overall proposition: a toy confidence in P ≠ NP</h2><span class="mval" id="mval">50.0%<small>toward P ≠ NP</small></span></div>
+    <div class="rope" aria-hidden="true">
+      <span class="end l">P = NP</span>
+      <div class="track"><i class="mid"></i><i class="prior" id="mprior"></i><i class="knot" id="knot"></i></div>
+      <span class="end r">P ≠ NP</span>
+    </div>
+    <div class="sparkbox">
+      <svg class="spark" id="spark" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+        <line class="base" x1="0" y1="100" x2="1000" y2="100" vector-effect="non-scaling-stroke"></line>
+        <line class="half" x1="0" y1="50" x2="1000" y2="50" vector-effect="non-scaling-stroke"></line>
+        <path class="line" id="sparkline" d="" vector-effect="non-scaling-stroke"></path>
+        <line class="now" id="sparknow" x1="0" y1="0" x2="0" y2="100" vector-effect="non-scaling-stroke"></line>
+      </svg>
+      <div class="sparkaxis"><span id="sparkfrom">Nov 22</span><span>line height: 0% (P = NP) to 100% (P ≠ NP), dashed at 50%</span><span>snapshot</span></div>
+    </div>
+    <div class="mctl">
+      <div class="grp" role="group" aria-label="Starting belief"><span class="lab">Start from</span>
+        <button class="seg" type="button" id="prior-none" aria-pressed="true">No prior · 50%</button>
+        <button class="seg" type="button" id="prior-poll" aria-pressed="false">Experts' 2019 poll · 88%</button></div>
+      <div class="sl"><label for="eps">One checked chain step moves belief by <b id="epsv">0.010</b> log-odds</label>
+        <input type="range" id="eps" min="0" max="100" step="1" value="59"></div>
+    </div>
+    <p class="note" id="mnote"></p>
+  </section>
+
+  <div class="scroll" id="scroll">
+    <div class="stage" id="stage">
+      <canvas id="roots" role="img" aria-label="Root diagram of lemmas"></canvas>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+  </div>
+  <p class="hint">Hover or tap a node for its lemma. On a phone, scroll the diagram sideways. Pause to inspect a moment.</p>
+
+  <div class="legend" id="legend" aria-label="Legend"></div>
+
+  <section class="detail" id="detail" aria-live="polite"></section>
+
+  <section>
+    <h2>How to read the roots</h2>
+    <dl class="read">
+      <div><dt>The surface</dt><dd>Each program's target sits just under it, drawn dashed while unproved. A target breaks the surface when Lean checks it. None has yet. P vs NP itself is the sign in the sky, far above any one target.</dd></div>
+      <div><dt>Taproot</dt><dd>The program's chain of steps toward its target, in the order its plan lists them. Solid where checked, dashed where open. The gap at the top is the hard link the program is stuck on. The chain is the plan's own list; only some steps are formally linked.</dd></div>
+      <div><dt>Side roots</dt><dd>One per theme, grouped by words in the lemmas (rules in the table below). Roots grow at the tips, so the oldest lemmas sit near the taproot and the newest at the ends. Root thickness grows with the number checked.</dd></div>
+      <div><dt>Bedrock</dt><dd>The library of known results, rebuilt in Lean so the programs stand on checked ground.</dd></div>
+      <div><dt>Color and shape</dt><dd>Blue roots aim at P = NP, red at P ≠ NP, brown are neutral. A filled node is checked, a ring is open, and a struck-through ring was killed by a counterexample.</dd></div>
+      <div><dt>Node size: promise</dt><dd>A rough score from signals in the record, with weights shown below. It measures attention, not truth.</dd></div>
+    </dl>
+    <ul class="weights" id="weights" aria-label="Promise score weights"></ul>
+  </section>
+
+  <section style="display:grid;gap:12px">
+    <h2>Themes</h2>
+    <p class="note">Each lemma takes the first theme in its program whose words appear in its text, using the site's own search index. These rules are this page's, not the project's.</p>
+    <div class="tablebox"><table id="themes"><thead><tr><th>Theme</th><th>Words</th><th style="text-align:right">Lemmas</th><th style="text-align:right">Checked</th><th style="text-align:right">Open</th><th style="text-align:right">Killed</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <footer>
+    <span id="source">Data: the public export at data.pequalnp.com.</span>
+    <span>An independent view of public data. Not made by or affiliated with pequalnp.com. Before the first visible check, a lemma's birth time is known only for the programs aiming at an answer; elsewhere it appears when its status last changed.</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const STATUS = ['checked', 'conjecture', 'in_work', 'refuted', 'blocked', 'retired'];
+  const WORD = { checked: 'Checked', conjecture: 'Conjecture', in_work: 'In work', refuted: 'Killed by a counterexample', blocked: 'Ruled dead', retired: 'Retired' };
+  const ROLE = ['', 'Chain rung', 'Hard link', 'Program target'];
+  const AIM = { p_eq_np: -1, p_neq_np: 1, neutral: 0 };
+  const AIM_WORD = { '-1': 'P = NP', '1': 'P ≠ NP', '0': 'Neither (neutral)' };
+  const SHORT = { p_eq_np_search: 'Algorithm search', gct: 'GCT', proof_complexity: 'Proof complexity', circuit_lower_bounds: 'Circuit bounds', meta_complexity: 'Meta-complexity', library: 'Known results' };
+  const ORDER = ['p_eq_np_search', 'gct', 'proof_complexity', 'circuit_lower_bounds', 'meta_complexity'];
+  const WEIGHTS = [['Program target', 3], ['Hard link', 2], ['Chain rung', 1.5], ['Rested on by others, each up to 3', 1], ['News article, each up to 3', 1], ['Claimed in a paper', 2], ['Cites published work', 0.5], ['Has a correction', -1]];
+  const TZ = 'America/Los_Angeles', PLAY_SECONDS = 48, FLASH = 150;
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => { const n = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else n.setAttribute(k, v); } n.append(...kids.filter((k) => k != null)); return n; };
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = (paint) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 14 14'); s.setAttribute('aria-hidden', 'true'); paint((tag, a) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(a)) n.setAttribute(k, v); s.append(n); }); return s; };
+  const glyph = (st, col = 'currentColor') => svg((add) => {
+    if (st === 0) add('circle', { cx: 7, cy: 7, r: 5, fill: col });
+    else if (st === 1) add('circle', { cx: 7, cy: 7, r: 4.6, fill: 'none', stroke: col, 'stroke-width': 1.6 });
+    else if (st === 2) { add('circle', { cx: 7, cy: 7, r: 4.8, fill: 'none', stroke: col, 'stroke-width': 1.4 }); add('circle', { cx: 7, cy: 7, r: 2, fill: col }); }
+    else if (st === 3 || st === 4) { add('circle', { cx: 7, cy: 7, r: 4, fill: 'none', stroke: col, 'stroke-width': 1.3, opacity: 0.7 }); add('path', { d: 'M12.5 1.5 1.5 12.5', stroke: col, 'stroke-width': 1.8, 'stroke-linecap': 'round' }); }
+    else add('path', { d: 'M2 7 H12', stroke: col, 'stroke-width': 1.8, 'stroke-linecap': 'round' });
+  });
+  const fmtPT = (ms, o) => new Intl.DateTimeFormat('en-US', { timeZone: TZ, ...o }).format(new Date(ms));
+  const whenPT = (ms) => `${fmtPT(ms, { weekday: 'short', month: 'short', day: 'numeric' })}, ${fmtPT(ms, { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase()} PT`;
+  const n = (x) => x.toLocaleString('en-US');
+  function hash(a, b, salt) { let x = Math.imul(a + 1, 73856093) ^ Math.imul(b + 7, 19349663) ^ Math.imul(salt + 3, 83492791); x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); x ^= x >>> 16; return (x >>> 0) / 4294967296; }
+
+  let D, rows, P, aim, t0, maxMin, idOf, byId, appear = [], X = [], Y = [], BX = [], BY = [], R = [], score = [], themeOf = [];
+  let systems = [], bedrock = null, T = 0, playing = false, lastTs = 0, sel = -1, hov = -1, geo, grid = null, colors;
+  const canvas = $('#roots'), ctx = canvas.getContext('2d'), stage = $('#stage'), tip = $('#tip'), range = $('#time'), playBtn = $('#play');
+
+  const promise = (r) => Math.max(0, (r[7] === 3 ? 3 : 0) + (r[7] === 2 ? 2 : 0) + (r[7] === 1 ? 1.5 : 0) + Math.min(r[6], 3) + Math.min(r[10], 3) + 2 * r[11] + 0.5 * r[16] - (r[17] > 0 ? 1 : 0));
+  // Status of lemma i at minute t: -1 not yet born; it shows as a conjecture until its last status change.
+  const statusAt = (i, t) => (t < appear[i] ? -1 : t < rows[i][3] ? 1 : rows[i][2]);
+
+  function init(data) {
+    D = data; rows = data.rows; P = data.programs;
+    aim = P.map((p) => AIM[p.aims_at] ?? 0);
+    t0 = Date.parse(data.source.started_at);
+    maxMin = Math.max(Math.ceil((Date.parse(data.source.generated_at) - t0) / 60000), ...rows.map((r) => r[3]));
+    idOf = (i) => `L-${P[rows[i][0]].key}-${String(rows[i][1]).padStart(3, '0')}`;
+    byId = new Map(rows.map((r, i) => [idOf(i), i]));
+    for (let i = 0; i < rows.length; i++) { const r = rows[i]; appear[i] = r[15] >= 0 ? Math.min(r[15], r[3]) : r[3]; score[i] = promise(r); }
+    T = maxMin; range.max = String(maxMin); range.value = String(maxMin); range.disabled = false;
+    $('#snap').textContent = `pequalnp.com · public record · snapshot ${whenPT(Date.parse(data.source.generated_at))}`;
+    $('#source').textContent = `Data: the public export at data.pequalnp.com (layout ${data.source.layout}, version ${data.source.version}), read ${whenPT(Date.parse(data.source.generated_at))}. ${n(rows.length)} lemmas, ${n(data.edges.length)} rests-on links.`;
+    legend(); weights(); themeTable(); initMeter();
+    select(byId.get(P.find((p) => p.id === 'gct').target) ?? -1, false);
+    new ResizeObserver(() => { layout(); draw(); }).observe(stage);
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => draw());
+    new MutationObserver(() => draw()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    layout(); draw(); tally();
+    if (document.fonts) document.fonts.ready.then(() => draw());
+  }
+
+  // ---- geometry ----
+  const bez = (s, p0, c, p1) => [(1 - s) * (1 - s) * p0[0] + 2 * (1 - s) * s * c[0] + s * s * p1[0], (1 - s) * (1 - s) * p0[1] + 2 * (1 - s) * s * c[1] + s * s * p1[1]];
+  const bezT = (s, p0, c, p1) => [2 * (1 - s) * (c[0] - p0[0]) + 2 * s * (p1[0] - c[0]), 2 * (1 - s) * (c[1] - p0[1]) + 2 * s * (p1[1] - c[1])];
+  function layout() {
+    const W = stage.clientWidth, H = Math.round(Math.min(940, Math.max(720, W * 0.68)));
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const surf = 104, bedTop = H - 118, bedBot = H - 10, soilH = bedTop - surf;
+    geo = { W, H, surf, bedTop, bedBot };
+    // widths: square root of each program's size, with a floor so small programs stay readable
+    const idx = ORDER.map((id) => P.findIndex((p) => p.id === id)).filter((i) => i >= 0);
+    const size = idx.map((pi) => rows.filter((r) => r[0] === pi).length);
+    let share = size.map((s) => Math.sqrt(s)); const tot = share.reduce((a, b) => a + b, 0);
+    share = share.map((s) => Math.max(0.105, s / tot)); const st = share.reduce((a, b) => a + b, 0); share = share.map((s) => s / st);
+    systems = []; let x = 8;
+    idx.forEach((pi, k) => {
+      const w = share[k] * (W - 16), x0 = x, x1 = x + w, cx = (x0 + x1) / 2, p = P[pi];
+      x = x1;
+      const tapTop = surf + 16, tapBot = surf + soilH * 0.6;
+      const sys = { pi, x0, x1, cx, w, tapTop, tapBot, rungs: [], branches: [] };
+      // the taproot: target at the surface, then the hard link, then the chain from newest step (top) to first (bottom)
+      const chain = p.chain.filter(Boolean);
+      sys.targetY = tapTop; sys.hardY = p.hard && p.hard !== p.target ? surf + 44 : null;
+      const top = surf + 72;
+      chain.forEach((id, j) => { const y = chain.length === 1 ? top : tapBot - (j / (chain.length - 1)) * (tapBot - top); sys.rungs.push({ id, i: byId.get(id) ?? -1, y }); });
+      // side roots, one per theme, biggest first, alternating sides, branching off the taproot from upper to lower
+      const themes = D.themes[p.key], counts = themes.map((_, t) => rows.filter((r) => r[0] === pi && r[14] === t).length);
+      const order = themes.map((_, t) => t).filter((t) => counts[t] > 0).sort((a, b) => counts[b] - counts[a]);
+      // roots on each side nest: the one that leaves the taproot highest reaches farthest out, then turns down
+      const perSide = { 1: [], '-1': [] };
+      order.forEach((t, j) => perSide[j % 2 === 0 ? 1 : -1].push({ t, j }));
+      order.forEach((t, j) => {
+        const sideSign = j % 2 === 0 ? 1 : -1, f = order.length === 1 ? 0.45 : 0.12 + (j / (order.length - 1)) * 0.78;
+        const list = perSide[sideSign], k = list.findIndex((x) => x.t === t), m = list.length;
+        const oy = top + f * (tapBot - top), reach = Math.max(14, (w / 2 - 8) * (m === 1 ? 0.8 : 0.95 - 0.5 * (k / (m - 1))));
+        const endY = bedTop - 30 - (m - 1 - k) * 5;
+        const p0 = [cx, oy], p1 = [cx + sideSign * reach, endY], c = [cx + sideSign * reach * 0.9, oy + (endY - oy) * 0.12];
+        sys.branches.push({ t, name: themes[t].name, count: counts[t], p0, c, p1, side: sideSign, members: [], times: [] });
+      });
+      systems.push(sys);
+    });
+    // place each lemma along its theme's root by birth order; plan nodes go on the taproot
+    const bOf = new Map(); systems.forEach((s) => s.branches.forEach((b) => bOf.set(`${s.pi}:${b.t}`, b)));
+    for (let i = 0; i < rows.length; i++) { const r = rows[i], b = bOf.get(`${r[0]}:${r[14]}`); if (b) b.members.push(i); }
+    for (const s of systems) for (const b of s.branches) {
+      b.members.sort((a, c) => appear[a] - appear[c] || a - c); b.times = b.members.map((i) => appear[i]);
+      const K = b.members.length, spread = Math.min(34, 3 + 1.1 * Math.sqrt(K)) * Math.min(1, s.w / 160);
+      b.members.forEach((i, k) => {
+        const r = rows[i], s0 = (k + 0.5) / K, sj = Math.min(0.999, Math.max(0.02, s0 + (hash(r[0], r[1], 3) - 0.5) * 0.04));
+        const [px, py] = bez(sj, b.p0, b.c, b.p1), [tx, ty] = bezT(sj, b.p0, b.c, b.p1), len = Math.hypot(tx, ty) || 1;
+        const off = (hash(r[0], r[1], 1) * 2 - 1) * spread * (0.3 + 0.7 * sj);
+        BX[i] = px; BY[i] = py; X[i] = px - (ty / len) * off; Y[i] = py + (tx / len) * off;
+      });
+    }
+    for (const s of systems) {
+      const p = P[s.pi];
+      for (const g of s.rungs) if (g.i >= 0 && rows[g.i][0] === s.pi) { X[g.i] = s.cx; Y[g.i] = g.y; BX[g.i] = NaN; }
+      if (p.hard && byId.has(p.hard) && s.hardY) { const i = byId.get(p.hard); X[i] = s.cx; Y[i] = s.hardY; BX[i] = NaN; }
+      if (p.target && byId.has(p.target)) { const i = byId.get(p.target); X[i] = s.cx; Y[i] = s.targetY; BX[i] = NaN; }
+    }
+    // bedrock: the library, laid out by theme across the full width
+    const lib = P.findIndex((p) => p.id === 'library');
+    if (lib >= 0) {
+      const th = D.themes[P[lib].key], members = th.map((_, t) => rows.map((r, i) => i).filter((i) => rows[i][0] === lib && rows[i][14] === t));
+      const total = members.reduce((a, m) => a + m.length, 0); let bx = 12; bedrock = { pi: lib, segs: [] };
+      members.forEach((m, t) => {
+        if (!m.length) return;
+        const w = (m.length / total) * (W - 24), x0 = bx; bx += w;
+        bedrock.segs.push({ name: th[t].name, x0, x1: bx, count: m.length });
+        m.forEach((i) => { const r = rows[i]; X[i] = x0 + 4 + hash(r[0], r[1], 1) * Math.max(1, w - 8); Y[i] = bedTop + 30 + hash(r[0], r[1], 2) * (bedBot - bedTop - 40); BX[i] = NaN; });
+      });
+      const tgt = byId.get(P[lib].target); if (tgt != null) { X[tgt] = 40; Y[tgt] = bedTop + 16; }
+    }
+    for (let i = 0; i < rows.length; i++) { const r = rows[i]; R[i] = r[0] === bedrock?.pi ? (r[7] ? 4 : 2.2) : score[i] > 0 || aim[r[0]] !== 0 ? 2.4 + 1.15 * Math.sqrt(score[i]) : 0; }
+    grid = null;
+  }
+
+  // ---- drawing ----
+  function tokens() { const cs = getComputedStyle(document.documentElement), g = (k) => cs.getPropertyValue(k).trim(); return { sky: g('--sky'), soil: g('--soil'), deep: g('--soil-deep'), rock: g('--rock'), rockLine: g('--rock-line'), ground: g('--ground'), dotn: g('--dot-n'), edge: g('--edge'), halo: g('--halo'), eq: g('--eq'), neq: g('--neq'), fg: g('--fg'), muted: g('--muted'), card: g('--card') }; }
+  const colOf = (pi) => (aim[pi] < 0 ? colors.eq : aim[pi] > 0 ? colors.neq : colors.dotn);
+  function mark(x, y, st, r, col) {
+    ctx.lineCap = 'round';
+    if (st === 0) { ctx.beginPath(); ctx.arc(x, y, r + 1.4, 0, 7); ctx.fillStyle = colors.soil; ctx.fill(); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = col; ctx.fill(); }
+    else if (st === 1) { ctx.beginPath(); ctx.arc(x, y, Math.max(1.6, r - 0.6), 0, 7); ctx.fillStyle = colors.soil; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke(); }
+    else if (st === 2) { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke(); ctx.beginPath(); ctx.arc(x, y, r * 0.42, 0, 7); ctx.fillStyle = col; ctx.fill(); }
+    else if (st === 3 || st === 4) { ctx.globalAlpha *= 0.75; ctx.beginPath(); ctx.arc(x, y, Math.max(1.6, r - 0.6), 0, 7); ctx.strokeStyle = col; ctx.lineWidth = 1.2; ctx.stroke(); const a = (r + 1.8) * 0.75; ctx.beginPath(); ctx.moveTo(x + a, y - a); ctx.lineTo(x - a, y + a); ctx.lineWidth = 1.7; ctx.stroke(); ctx.globalAlpha /= 0.75; }
+    else { ctx.globalAlpha *= 0.5; ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x + r, y); ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha /= 0.5; }
+  }
+  const label = (txt, x, y, font, color, align = 'center') => { ctx.font = font; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = colors.halo; ctx.strokeText(txt, x, y); ctx.fillStyle = color; ctx.fillText(txt, x, y); };
+  const dead = (st) => st === 3 || st === 4 || st === 5;
+  // a severed link: a gap in the middle with a cross where the attack landed
+  function cutLine(x1, y1, x2, y2, col, w) {
+    const L = Math.hypot(x2 - x1, y2 - y1) || 1, ux = (x2 - x1) / L, uy = (y2 - y1) / L, mx = (x1 + x2) / 2, my = (y1 + y2) / 2, g = Math.min(7, L / 4);
+    ctx.setLineDash([]); ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(mx - ux * g, my - uy * g); ctx.moveTo(mx + ux * g, my + uy * g); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(mx - 3.5, my - 3.5); ctx.lineTo(mx + 3.5, my + 3.5); ctx.moveTo(mx + 3.5, my - 3.5); ctx.lineTo(mx - 3.5, my + 3.5); ctx.stroke();
+  }
+  function bornCount(b, t) { let lo = 0, hi = b.times.length; while (lo < hi) { const m = (lo + hi) >> 1; if (b.times[m] <= t) lo = m + 1; else hi = m; } return lo; }
+
+  function draw() {
+    if (!geo) return;
+    colors = tokens(); const c = colors, { W, H, surf, bedTop, bedBot } = geo;
+    ctx.clearRect(0, 0, W, H);
+    // sky, soil, bedrock
+    ctx.fillStyle = c.sky; ctx.fillRect(0, 0, W, surf);
+    const g = ctx.createLinearGradient(0, surf, 0, bedTop); g.addColorStop(0, c.soil); g.addColorStop(1, c.deep); ctx.fillStyle = g; ctx.fillRect(0, surf, W, bedTop - surf);
+    ctx.fillStyle = c.rock; ctx.fillRect(0, bedTop, W, bedBot - bedTop + 10);
+    ctx.strokeStyle = c.rockLine; ctx.lineWidth = 1;
+    for (let k = 0; k < 4; k++) { const y = bedTop + 22 + k * 22; ctx.beginPath(); for (let x = 0; x <= W; x += 24) { const yy = y + Math.sin(x / 60 + k * 1.7) * 3; x ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy); } ctx.stroke(); }
+    ctx.strokeStyle = c.ground; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, surf); ctx.lineTo(W, surf); ctx.stroke();
+    ctx.strokeStyle = c.ground; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, bedTop); ctx.lineTo(W, bedTop); ctx.stroke();
+    // the sky: what each group aims at
+    const groups = [[-1, 'P = NP'], [1, 'P ≠ NP'], [0, 'Neither answer']];
+    for (const [a, txt] of groups) {
+      const ss = systems.filter((s) => aim[s.pi] === a); if (!ss.length) continue;
+      const x0 = ss[0].x0 + 6, x1 = ss[ss.length - 1].x1 - 6, cx = (x0 + x1) / 2, col = a < 0 ? c.eq : a > 0 ? c.neq : c.muted;
+      ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0, 50); ctx.lineTo(x0, 44); ctx.lineTo(x1, 44); ctx.lineTo(x1, 50); ctx.stroke();
+      // two lines, the answer sized to fit its bracket, so a narrow group never spills into its neighbour
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = col;
+      ctx.font = '500 11px "IBM Plex Mono", ui-monospace, monospace'; ctx.fillText('AIMS AT', cx, 14);
+      ctx.font = '800 26px "Big Shoulders Display", "Arial Narrow", sans-serif';
+      const size = Math.max(12, Math.min(26, (26 * (x1 - x0 - 6)) / ctx.measureText(txt).width));
+      ctx.font = `800 ${size}px "Big Shoulders Display", "Arial Narrow", sans-serif`; ctx.fillText(txt, cx, 37);
+    }
+    for (const s of systems) label(SHORT[P[s.pi].id] ?? P[s.pi].title, s.cx, surf - 16, `700 ${s.w < 120 ? 13 : 15}px "Big Shoulders Display", "Arial Narrow", sans-serif`, c.fg);
+    ctx.font = '500 11px "IBM Plex Mono", ui-monospace, monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillStyle = c.muted;
+    ctx.fillText('surface: program targets', W - 8, surf + 5);
+    ctx.fillText('bedrock: known results', W - 8, bedTop + 5);
+
+    // side roots grow to their newest born lemma; thickness follows how many are checked so far
+    for (const s of systems) {
+      const col = colOf(s.pi);
+      for (const b of s.branches) {
+        const born = bornCount(b, T); b.drawn = { born: 0 }; if (!born) continue;
+        let checked = 0; for (let k = 0; k < born; k++) if (statusAt(b.members[k], T) === 0) checked++;
+        const sMax = born / b.members.length, steps = 24;
+        ctx.strokeStyle = col; ctx.globalAlpha = 0.5; ctx.lineCap = 'round';
+        ctx.lineWidth = 1.2 + 2.4 * Math.log10(1 + checked); ctx.beginPath();
+        for (let k = 0; k <= steps; k++) { const [x, y] = bez((k / steps) * sMax, b.p0, b.c, b.p1); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+        ctx.stroke(); ctx.globalAlpha = 1;
+        b.drawn = { born, checked, tip: bez(sMax, b.p0, b.c, b.p1) };
+      }
+    }
+    // root hairs and the dense neutral roots
+    ctx.lineWidth = 1; ctx.globalAlpha = 0.16;
+    for (const s of systems) {
+      ctx.strokeStyle = colOf(s.pi); ctx.beginPath();
+      for (const b of s.branches) for (let k = 0; k < (b.drawn?.born ?? 0); k++) { const i = b.members[k]; if (Number.isNaN(BX[i])) continue; ctx.moveTo(BX[i], BY[i]); ctx.lineTo(X[i], Y[i]); }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    const fade = [0.62, 0.3, 0.6, 0.2, 0.2, 0.12];
+    ctx.fillStyle = c.dotn;
+    for (let i = 0; i < rows.length; i++) {
+      if (R[i] > 0) continue; const st = statusAt(i, T); if (st < 0) continue;
+      ctx.globalAlpha = fade[st]; ctx.fillRect(X[i] - 1, Y[i] - 1, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+    // rests-on links; a link whose support was killed or withdrawn is drawn cut
+    const cuts = [];
+    ctx.strokeStyle = c.edge; ctx.lineWidth = 1; ctx.beginPath();
+    for (const [a, b] of D.edges) {
+      const sa = statusAt(a, T), sb = statusAt(b, T); if (sa < 0 || sb < 0 || sa === 5) continue;
+      if (dead(sb)) { cuts.push([a, b]); continue; }
+      ctx.moveTo(X[a], Y[a]); ctx.lineTo(X[b], Y[b]);
+    }
+    ctx.stroke();
+    for (const [a, b] of cuts) cutLine(X[a], Y[a], X[b], Y[b], c.fg, 1);
+    if (sel >= 0) { ctx.strokeStyle = c.fg; ctx.lineWidth = 1.6; ctx.beginPath(); for (const [a, b] of D.edges) if ((a === sel || b === sel) && statusAt(a, T) >= 0 && statusAt(b, T) >= 0) { ctx.moveTo(X[a], Y[a]); ctx.lineTo(X[b], Y[b]); } ctx.stroke(); }
+    // taproots: solid where the step is checked, dashed where open; the gap below the target is the hard link
+    for (const s of systems) {
+      const col = colOf(s.pi), pts = [...s.rungs].reverse().map((g) => ({ y: g.y, st: g.i >= 0 ? statusAt(g.i, T) : 1 }));
+      const p = P[s.pi], hardI = p.hard ? byId.get(p.hard) : null, tgtI = p.target ? byId.get(p.target) : null;
+      if (s.hardY && hardI != null) pts.unshift({ y: s.hardY, st: statusAt(hardI, T), hard: true });
+      pts.unshift({ y: s.targetY, st: tgtI != null ? statusAt(tgtI, T) : 1 });
+      for (let k = 0; k < pts.length - 1; k++) {
+        const a = pts[k], b = pts[k + 1]; if (b.st < 0 && a.st < 0) continue;
+        if (a.st === 3 || a.st === 4 || b.st === 3 || b.st === 4) { ctx.globalAlpha = 0.9; cutLine(s.cx, a.y, s.cx, b.y, col, 1.8); ctx.globalAlpha = 1; continue; }
+        const solid = a.st === 0 && b.st === 0;
+        ctx.strokeStyle = col; ctx.lineWidth = solid ? 4 : 1.6; ctx.setLineDash(solid ? [] : [4, 4]); ctx.globalAlpha = solid ? 0.85 : 0.75;
+        ctx.beginPath(); ctx.moveTo(s.cx, a.y); ctx.lineTo(s.cx, b.y); ctx.stroke();
+      }
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+      for (const g of s.rungs) { if (g.i < 0) continue; const st = statusAt(g.i, T); if (st < 0) continue; if (rows[g.i][0] !== s.pi) mark(s.cx, g.y, st, 3.4, col); }
+      if (s.hardY && hardI != null && statusAt(hardI, T) >= 0) label(s.w < 130 ? 'hard' : 'hard link', s.cx + 12, s.hardY, `500 ${s.w < 130 ? 10 : 11}px "IBM Plex Mono", ui-monospace, monospace`, c.fg, 'left');
+    }
+    // nodes with size, newest effects on top
+    for (let i = 0; i < rows.length; i++) {
+      if (!(R[i] > 0)) continue; const st = statusAt(i, T); if (st < 0) continue;
+      const r = rows[i], col = r[0] === bedrock?.pi ? c.dotn : colOf(r[0]);
+      mark(X[i], Y[i], st, R[i], col);
+      if (r[7] >= 2) { ctx.beginPath(); ctx.arc(X[i], Y[i], R[i] + 4, 0, 7); ctx.setLineDash([2, 2]); ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]); }
+    }
+    // the moment of a check or a kill: a brief glow, or a strike from outside
+    if (T < maxMin) for (let i = 0; i < rows.length; i++) {
+      const dt = T - rows[i][3]; if (dt < 0 || dt > FLASH || appear[i] > T) continue;
+      const st = rows[i][2], k = 1 - dt / FLASH, big = R[i] > 0, x = X[i], y = Y[i];
+      if (st === 0) { ctx.globalAlpha = k * (big ? 0.9 : 0.5); ctx.beginPath(); ctx.arc(x, y, (big ? R[i] : 1.5) + 3 + (1 - k) * 8, 0, 7); ctx.strokeStyle = c.fg; ctx.lineWidth = 1.2; ctx.stroke(); }
+      else if ((st === 3 || st === 4) && big) { ctx.globalAlpha = k; ctx.strokeStyle = c.fg; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x + 18, y - 18); ctx.lineTo(x + 9, y - 7); ctx.lineTo(x + 12, y - 5); ctx.lineTo(x + 3, y - 3); ctx.stroke(); }
+    }
+    ctx.globalAlpha = 1;
+    // labels: targets, theme tips, bedrock seams
+    for (const s of systems) {
+      const p = P[s.pi], i = p.target ? byId.get(p.target) : null;
+      if (i != null && statusAt(i, T) >= 0) label('target', s.cx + R[i] + 7, s.targetY, '600 11px "Inter", system-ui, sans-serif', c.fg, 'left');
+      if (s.w < 150) continue;
+      for (const b of s.branches) { const born = b.drawn?.born ?? 0; ctx.globalAlpha = born ? 1 : 0.45; label(`${b.name} · ${n(born)}`, b.p1[0] + (b.side > 0 ? -4 : 4), b.p1[1] + 16, '600 11.5px "Inter", system-ui, sans-serif', c.fg, b.side > 0 ? 'right' : 'left'); ctx.globalAlpha = 1; }
+    }
+    if (bedrock) for (const sg of bedrock.segs) if (sg.x1 - sg.x0 > 70) label(`${sg.name} · ${n(sg.count)}`, sg.x0 + 6, bedTop + 20, '500 11px "IBM Plex Mono", ui-monospace, monospace', c.fg, 'left');
+    for (const [i, w] of [[sel, 2], [hov, 1.5]]) { if (i < 0 || statusAt(i, T) < 0) continue; ctx.beginPath(); ctx.arc(X[i], Y[i], Math.max(R[i], 1.5) + 5, 0, 7); ctx.lineWidth = w; ctx.strokeStyle = c.fg; ctx.stroke(); }
+    canvas.setAttribute('aria-label', `Root diagram of ${n(rows.length)} lemmas at ${whenPT(t0 + T * 60000)}. No program target has been proved. The themes table below lists the counts.`);
+  }
+
+  // ---- the tally and clock ----
+  function tally() {
+    const c = { '-1': [0, 0, 0], 0: [0, 0, 0], 1: [0, 0, 0] };
+    for (let i = 0; i < rows.length; i++) { const st = statusAt(i, T); if (st < 0) continue; const a = c[aim[rows[i][0]]]; if (st === 0) a[0]++; else if (st === 1 || st === 2) a[1]++; else if (st === 3 || st === 4) a[2]++; }
+    const box = $('#tally'); box.replaceChildren();
+    for (const [a, cls, name] of [[-1, 'eqc', 'Aims at P = NP'], [0, 'nc', 'Neutral'], [1, 'neqc', 'Aims at P ≠ NP']]) {
+      const v = c[a]; box.append(el('div', {}, el('b', {}, el('i', { class: cls }), name, el('em', { text: n(v[0]) })), `checked · ${n(v[1])} open · ${n(v[2])} killed`));
+    }
+    meter();
+    $('#when').textContent = whenPT(t0 + T * 60000);
+    const h = Math.round(T / 60); $('#elapsed').textContent = T >= maxMin ? 'snapshot' : `hour ${h} of ${Math.round(maxMin / 60)}`;
+    range.value = String(Math.round(T));
+  }
+  function frame(ts) {
+    if (!playing) return;
+    const dt = lastTs ? (ts - lastTs) / 1000 : 0; lastTs = ts;
+    T = Math.min(maxMin, T + (dt * maxMin) / PLAY_SECONDS);
+    draw(); tally();
+    if (T >= maxMin) { pause(); return; }
+    requestAnimationFrame(frame);
+  }
+  function play() { if (T >= maxMin) T = 0; playing = true; lastTs = 0; grid = null; tip.hidden = true; hov = -1; playBtn.textContent = 'Pause'; requestAnimationFrame(frame); }
+  function pause() { playing = false; playBtn.textContent = T >= maxMin ? 'Replay growth' : 'Resume'; draw(); tally(); }
+  playBtn.addEventListener('click', () => (playing ? pause() : play()));
+  range.addEventListener('input', () => { T = Number(range.value); if (playing) pause(); grid = null; draw(); tally(); });
+
+  // ---- hover and select ----
+  function buildGrid() {
+    grid = new Map();
+    for (let i = 0; i < rows.length; i++) { if (statusAt(i, T) < 0) continue; const k = `${Math.floor(X[i] / 14)},${Math.floor(Y[i] / 14)}`; (grid.get(k) || grid.set(k, []).get(k)).push(i); }
+  }
+  function nearest(x, y, rad) {
+    if (!grid) buildGrid();
+    let best = -1, bd = Infinity; const gx = Math.floor(x / 14), gy = Math.floor(y / 14);
+    for (let a = gx - 1; a <= gx + 1; a++) for (let b = gy - 1; b <= gy + 1; b++) for (const i of grid.get(`${a},${b}`) || []) {
+      const d = Math.hypot(X[i] - x, Y[i] - y) - Math.max(R[i], 1) * 0.8 - (R[i] > 0 ? 2 : 0);
+      if (d < bd) { bd = d; best = i; }
+    }
+    return bd <= rad ? best : -1;
+  }
+  function facts(i) {
+    const r = rows[i], p = P[r[0]], th = D.themes[p.key][r[14]]?.name;
+    const parts = [`Program: ${p.title}`, `Aims at: ${AIM_WORD[String(aim[r[0]])]}`];
+    if (th) parts.push(`Theme: ${th}`);
+    if (r[7]) parts.push(`Plan role: ${ROLE[r[7]]}`);
+    parts.push(`Rests on ${r[5]} · rested on by ${r[6]}`);
+    if (r[15] >= 0) parts.push(`Proposed ${whenPT(t0 + r[15] * 60000)}`);
+    parts.push(`Status since ${whenPT(t0 + r[3] * 60000)}`);
+    if (r[12] >= 0) parts.push(`Attempts: ${r[12]}${r[13] > 0 ? ` (${r[13]} died)` : ''}`);
+    if (r[10]) parts.push(`In ${r[10]} news ${r[10] === 1 ? 'article' : 'articles'}`);
+    if (r[11]) parts.push('Claimed in a paper');
+    if (r[16]) parts.push('Cites published work');
+    if (r[17]) parts.push(`${r[17]} ${r[17] === 1 ? 'correction' : 'corrections'}`);
+    if (r[9]) parts.push('Proved by an outside contributor');
+    parts.push(`Promise score: ${score[i].toFixed(1)}`);
+    return parts;
+  }
+  function select(i, redraw = true) {
+    sel = i; const box = $('#detail'); box.replaceChildren();
+    if (i < 0) { box.append(el('p', { class: 'plain', text: 'Tap or hover any node to see its lemma.' })); if (redraw) draw(); return; }
+    const r = rows[i], id = idOf(i), st = STATUS[r[2]];
+    box.append(
+      el('div', { class: 'row1' }, el('span', { text: id }), el('span', { class: 'pill' }, glyph(r[2]), WORD[st]), r[7] ? el('span', { class: 'pill', text: ROLE[r[7]] }) : null,
+        el('a', { href: `https://pequalnp.com/lemma#${id}`, target: '_blank', rel: 'noopener noreferrer', text: 'Open on pequalnp.com ↗' })),
+      el('p', { class: 'title', text: D.titles[id] || 'Title not in the public summary files. Its full statement is on pequalnp.com.' }),
+      D.plain[id] ? el('p', { class: 'plain', text: D.plain[id] }) : null,
+      el('p', { class: 'facts', text: facts(i).join('  ·  ') }));
+    if (redraw) draw();
+  }
+  function showTip(i, x, y) {
+    if (i < 0) { tip.hidden = true; return; }
+    const r = rows[i], id = idOf(i), st = statusAt(i, T);
+    tip.replaceChildren(el('div', { class: 'id', text: `${id} · ${WORD[STATUS[st]] ?? ''}${r[7] ? ` · ${ROLE[r[7]]}` : ''}` }), el('div', { class: 't', text: D.titles[id] || `${P[r[0]].title}, ${D.themes[P[r[0]].key][r[14]]?.name ?? ''}` }));
+    tip.hidden = false;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.left = `${Math.max(4, Math.min(geo.W - tw - 4, x + 14))}px`;
+    tip.style.top = `${y - th - 12 < 0 ? y + 16 : y - th - 12}px`;
+  }
+  const pt = (e) => { const b = canvas.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+  canvas.addEventListener('pointermove', (e) => { if (playing || e.pointerType === 'touch' || !geo) return; const [x, y] = pt(e); const i = nearest(x, y, 9); if (i !== hov) { hov = i; draw(); } showTip(i, x, y); });
+  canvas.addEventListener('pointerleave', () => { if (hov !== -1) { hov = -1; draw(); } tip.hidden = true; });
+  canvas.addEventListener('click', (e) => { if (playing) pause(); const [x, y] = pt(e); const i = nearest(x, y, 14); if (i >= 0) { select(i); showTip(i, x, y); } });
+
+  // ---- the overall proposition: a toy model, with every weight on the page ----
+  // Pull toward P ≠ NP is positive, toward P = NP negative. A lemma counts once its final status is reached.
+  const PULL = { target: 10, hard: 4, chain: 1, helper: 0.05, kill: 1, candidate: 0.5 };
+  const POLL = Math.log(0.88 / 0.12);
+  let mPrior = 0, mEps = 0.01, ev = [], cumPos = [], cumNeg = [];
+  function pullOf(i, alg, eqChain) {
+    const r = rows[i], a = aim[r[0]], id = idOf(i), byRole = r[7] === 3 ? PULL.target : r[7] === 2 ? PULL.hard : r[7] === 1 ? PULL.chain : PULL.helper;
+    if (r[2] === 0) {
+      if (r[0] !== alg && eqChain.has(id)) return PULL.kill;        // a checked result the P = NP search uses to kill one of its own candidates
+      return a === 1 ? byRole : a === -1 ? -byRole : 0;              // neutral programs pull neither way
+    }
+    if ((r[2] === 3 || r[2] === 4) && a === -1 && /^candidate/i.test(D.titles[id] || '')) return PULL.candidate; // a candidate fast algorithm, killed
+    return 0;                                                        // refuted or retired claims are removed, and pull nothing
+  }
+  function initMeter() {
+    const alg = P.findIndex((p) => p.aims_at === 'p_eq_np'), eqChain = new Set(alg >= 0 ? P[alg].chain.filter(Boolean) : []);
+    for (let i = 0; i < rows.length; i++) { const w = pullOf(i, alg, eqChain); if (w) ev.push([rows[i][3], w]); }
+    ev.sort((a, b) => a[0] - b[0]); let p = 0, q = 0; cumPos = ev.map((e) => (p += Math.max(0, e[1]))); cumNeg = ev.map((e) => (q += Math.max(0, -e[1])));
+    $('#sparkfrom').textContent = fmtPT(t0, { weekday: 'short', month: 'short', day: 'numeric' });
+    const setPrior = (v) => { mPrior = v; $('#prior-none').setAttribute('aria-pressed', String(v === 0)); $('#prior-poll').setAttribute('aria-pressed', String(v !== 0)); spark(); meter(); };
+    $('#prior-none').addEventListener('click', () => setPrior(0)); $('#prior-poll').addEventListener('click', () => setPrior(POLL));
+    const eps = $('#eps'), setEps = () => { mEps = 0.001 * Math.pow(50, Number(eps.value) / 100); $('#epsv').textContent = mEps.toFixed(mEps < 0.01 ? 4 : 3); spark(); meter(); };
+    eps.addEventListener('input', setEps); setEps();
+  }
+  function pullAt(t) { let lo = 0, hi = ev.length; while (lo < hi) { const m = (lo + hi) >> 1; if (ev[m][0] <= t) lo = m + 1; else hi = m; } return lo ? [cumPos[lo - 1], cumNeg[lo - 1]] : [0, 0]; }
+  const conf = (t) => { const [p, q] = pullAt(t); return 1 / (1 + Math.exp(-(mPrior + mEps * (p - q)))); };
+  function spark() {
+    if (!ev.length && !rows) return; let d = '';
+    for (let k = 0; k <= 200; k++) { const t = (k / 200) * maxMin; d += `${k ? 'L' : 'M'}${(k * 5).toFixed(1)},${(100 - conf(t) * 100).toFixed(2)}`; }
+    $('#sparkline').setAttribute('d', d);
+  }
+  function meter() {
+    if (!rows) return;
+    const c = conf(T), [p, q] = pullAt(T);
+    $('#mval').firstChild.nodeValue = `${(c * 100).toFixed(1)}%`;
+    $('#knot').style.left = `${c * 100}%`; $('#mprior').style.left = `${(1 / (1 + Math.exp(-mPrior))) * 100}%`;
+    const x = ((T / maxMin) * 1000).toFixed(1); const now = $('#sparknow'); now.setAttribute('x1', x); now.setAttribute('x2', x);
+    $('#mnote').textContent = `By ${whenPT(t0 + T * 60000)} the record adds ${p.toFixed(1)} points toward P ≠ NP and ${q.toFixed(1)} toward P = NP. `
+      + `Weights per lemma, counted once it is checked: program target ${PULL.target}, hard link ${PULL.hard}, chain step ${PULL.chain}, other lemma ${PULL.helper}. `
+      + `The P = NP search has no checked lemma; its checked chain steps are lower bounds it used to kill its own candidate algorithms, so each counts ${PULL.kill} toward P ≠ NP, and each killed candidate ${PULL.candidate}. `
+      + 'Refuted and retired claims count nothing, and neutral programs pull neither way. These weights are invented: slide them to see how much the answer depends on them. Real confidence in P vs NP should barely move on results like these.';
+  }
+
+  // ---- static parts ----
+  function legend() {
+    const box = $('#legend');
+    box.append(el('span', {}, glyph(0, 'var(--eq)'), 'Aims at P = NP'), el('span', {}, glyph(0, 'var(--neq)'), 'Aims at P ≠ NP'), el('span', {}, glyph(0, 'var(--dot-n)'), 'Neutral (tiny dots when no signal)'));
+    for (const [st, w] of [[0, 'Checked'], [1, 'Open conjecture'], [2, 'In work'], [3, 'Killed by a counterexample'], [5, 'Retired']]) box.append(el('span', {}, glyph(st), w));
+    box.append(el('span', {}, svg((add) => { add('path', { d: 'M7 1 V13', stroke: 'currentColor', 'stroke-width': 3.2 }); }), 'Taproot step checked'), el('span', {}, svg((add) => { add('path', { d: 'M7 1 V13', stroke: 'currentColor', 'stroke-width': 1.5, 'stroke-dasharray': '3 3' }); }), 'Taproot step open'));
+  }
+  function weights() { const ul = $('#weights'); for (const [w, v] of WEIGHTS) ul.append(el('li', { text: `${w} ${v > 0 ? '+' : '−'}${Math.abs(v)}` })); }
+  function themeTable() {
+    const tb = $('#themes tbody');
+    const order = [...ORDER, 'library'].map((id) => P.findIndex((p) => p.id === id)).filter((i) => i >= 0);
+    for (const pi of order) {
+      const p = P[pi]; tb.append(el('tr', { class: 'group' }, el('td', { colspan: '6', text: `${p.title} · aims at ${AIM_WORD[String(aim[pi])]}` })));
+      D.themes[p.key].forEach((t, k) => {
+        const m = rows.filter((r) => r[0] === pi && r[14] === k); if (!m.length) return;
+        const cnt = (f) => n(m.filter(f).length);
+        tb.append(el('tr', {}, el('td', { text: t.name }), el('td', { class: 'words', text: t.words.length ? t.words.join(', ') : 'none of the words above' }),
+          el('td', { class: 'num', text: n(m.length) }), el('td', { class: 'num', text: cnt((r) => r[2] === 0) }), el('td', { class: 'num', text: cnt((r) => r[2] === 1 || r[2] === 2) }), el('td', { class: 'num', text: cnt((r) => r[2] === 3 || r[2] === 4) })));
+      });
+    }
+  }
+
+  fetch('data.json').then((r) => { if (!r.ok) throw new Error(`data.json: HTTP ${r.status}`); return r.json(); }).then(init).catch((e) => {
+    $('#detail').replaceChildren(el('p', { class: 'err', text: `The data did not load (${e.message}). Reload the page to try again.` }));
+  });
+})();
+</script>

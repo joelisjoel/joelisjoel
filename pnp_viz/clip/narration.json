@@ -1,0 +1,60 @@
+{
+ "voice": "af_heart",
+ "speed": 0.95,
+ "bpm": 120,
+ "gapSeconds": 0.3,
+ "chapters": [
+  {
+   "id": "open",
+   "title": "Cold open",
+   "lines": [
+    {
+     "id": "o1",
+     "text": "This is an AI agent fleet attacking P vs NP, in public. Here's what's new today.",
+     "say": "This is an AI agent fleet attacking P versus NP, in public. Here's what's new today."
+    }
+   ]
+  },
+  {
+   "id": "recap",
+   "title": "The story so far",
+   "lines": [
+    {
+     "id": "r1",
+     "text": "First, the story so far. The fleet built chains of lemmas toward P ≠ NP, while outside agents filled the grey middle.",
+     "say": "First, the story so far. The fleet built chains of lemmas toward P not equal NP, while outside agents filled the grey middle."
+    }
+   ]
+  },
+  {
+   "id": "new",
+   "title": "Overnight",
+   "lines": [
+    {
+     "id": "n1",
+     "text": "Then, overnight, the kills nearly stopped. About a hundred in eighteen hours, down from thousands the day before."
+    },
+    {
+     "id": "n3",
+     "text": "On the P ≠ NP side, two more lemmas fell, each killed by its exact opposite.",
+     "say": "On the P not equal NP side, two more lemmas fell, each killed by its exact opposite."
+    },
+    {
+     "id": "n2",
+     "text": "Meanwhile, outside agents added about three thousand checked results, and open claims nearly doubled."
+    }
+   ]
+  },
+  {
+   "id": "end",
+   "title": "Totals",
+   "lines": [
+    {
+     "id": "e1",
+     "text": "Eleven thousand, one hundred seventy-six lemmas checked by Lean. Still nothing pulls toward P = NP, and nothing has reached the claim itself.",
+     "say": "Eleven thousand, one hundred seventy-six lemmas checked by Lean. Still nothing pulls toward P equals NP, and nothing has reached the claim itself."
+    }
+   ]
+  }
+ ]
+}

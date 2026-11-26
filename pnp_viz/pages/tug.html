@@ -1,0 +1,603 @@
+<title>P vs NP Tug of War</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: a night tug-of-war field. Each theme is a rope; lemmas pull toward the end zone of the answer they support; lasers are kills. One dark look by choice. */
+:root {
+  color-scheme: dark;
+  --bg: #090c0b; --fg: #e8ece9; --muted: #95a29b; --rule: #24302b; --card: #111815;
+  --field: #0e1512; --band: #191f1c; --line: #1d2a24; --goal: #3b4c43; --ez-l: #0d1a2c; --ez-r: #2a1114;
+  --ez-text: rgba(232, 236, 233, 0.11); --edge: rgba(232, 236, 233, 0.34); --rope: #3c4a42;
+  --eq: #4da3ff; --neq: #ff5f64; --neutral-laser: #d6ddd9;
+  --cold: #6d6650; --warm: #b8963f; --hot: #ffd46e; --dead: #3a3e43; --dead-mark: #737880; --dot-n: #8e978f;
+  --f-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-body); }
+.wrap { max-width: 1280px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 18px; }
+.eyebrow { font: 500 12px/1.3 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font: 800 clamp(44px, 8vw, 84px)/0.9 var(--f-display); letter-spacing: 0.01em; margin: 6px 0 0; text-wrap: balance; }
+h1 .eq { color: var(--eq); } h1 .neq { color: var(--neq); }
+h2 { font: 700 24px/1.1 var(--f-display); letter-spacing: 0.02em; margin: 0; text-wrap: balance; }
+.dek { max-width: 68ch; margin: 10px 0 0; }
+.note { max-width: 70ch; margin: 0; color: var(--muted); font-size: 14px; }
+a { color: inherit; text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+.panel { border: 1px solid var(--rule); border-radius: 8px; background: var(--card); padding: 12px 14px; display: grid; gap: 10px; min-width: 0; }
+.player { grid-template-columns: auto 1fr; gap: 10px 16px; align-items: center; }
+.play { font: 700 17px/1 var(--f-display); letter-spacing: 0.04em; text-transform: uppercase; background: var(--hot); color: #17130a; border: 0; border-radius: 999px; padding: 10px 18px 9px; cursor: pointer; min-width: 132px; }
+.scrub { display: grid; gap: 4px; min-width: 0; }
+.scrub input { width: 100%; accent-color: var(--hot); margin: 0; }
+.when { font: 500 13px/1.2 var(--f-mono); font-variant-numeric: tabular-nums; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.when span:last-child { color: var(--muted); }
+.tally { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--rule); padding-top: 10px; }
+.tally div { min-width: 0; padding: 0 14px; font: 400 12.5px/1.4 var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.tally div:first-child { padding-left: 0; }
+.tally div + div { border-left: 1px solid var(--rule); }
+.tally b { display: flex; align-items: baseline; gap: 8px; font: 700 18px/1.1 var(--f-display); letter-spacing: 0.03em; color: var(--fg); }
+.tally b em { font-style: normal; font-size: 26px; margin-left: auto; font-variant-numeric: tabular-nums; }
+.tally .e { color: var(--eq); } .tally .n { color: var(--neq); }
+
+.mhead { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; }
+.mval { font: 800 32px/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.mval small { font: 500 12px/1 var(--f-mono); color: var(--muted); margin-left: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+.spark { width: 100%; height: 64px; display: block; }
+.spark .half { stroke: var(--muted); stroke-dasharray: 4 4; }
+.spark .base { stroke: var(--rule); }
+.spark .line { fill: none; stroke: var(--neq); stroke-width: 2; }
+.spark .now { stroke: var(--fg); stroke-width: 1; }
+.sparkaxis { display: flex; justify-content: space-between; gap: 8px; font: 400 11.5px/1.3 var(--f-mono); color: var(--muted); }
+.ctl { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+.grp { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.lab { font: 500 12px/1 var(--f-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.seg { font: 500 13px/1 var(--f-body); color: var(--fg); background: transparent; border: 1px solid var(--rule); border-radius: 999px; padding: 7px 11px; cursor: pointer; }
+.seg[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.sl { display: grid; gap: 4px; min-width: min(300px, 100%); flex: 1; }
+.sl label { font-size: 13px; color: var(--muted); }
+.sl input { width: 100%; accent-color: var(--fg); margin: 0; }
+
+.scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; -webkit-overflow-scrolling: touch; }
+.stage { position: relative; min-width: 1000px; }
+canvas { display: block; width: 100%; touch-action: pan-x pan-y; cursor: crosshair; }
+.tip { position: absolute; pointer-events: none; max-width: 330px; background: var(--card); color: var(--fg); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; font-size: 13px; line-height: 1.4; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); z-index: 2; }
+.tip .id { font: 500 12px/1.3 var(--f-mono); color: var(--muted); }
+.tip .t { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; }
+.hint { font: 400 12.5px/1.4 var(--f-mono); color: var(--muted); margin: 0; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: var(--muted); align-items: center; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend svg { width: 14px; height: 14px; flex: none; }
+.legend .heat { width: 90px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--cold), var(--warm), var(--hot)); display: inline-block; }
+
+.detail { gap: 8px; padding: 16px 18px; }
+.detail .row1 { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font: 500 13px/1.2 var(--f-mono); color: var(--muted); }
+.pill { font: 600 12px/1 var(--f-body); border-radius: 999px; padding: 5px 9px; border: 1px solid var(--rule); color: var(--fg); }
+.detail .title { font: 600 18px/1.35 var(--f-body); margin: 0; overflow-wrap: anywhere; }
+.detail .plain { margin: 0; color: var(--muted); font-size: 14px; max-width: 80ch; overflow-wrap: anywhere; }
+.detail .facts { margin: 0; font: 400 12.5px/1.6 var(--f-mono); color: var(--muted); overflow-wrap: anywhere; }
+.read { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px 28px; margin: 12px 0 0; }
+.read div { min-width: 0; }
+.read dt { font: 700 17px/1.2 var(--f-display); letter-spacing: 0.03em; }
+.read dd { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; display: grid; gap: 4px; }
+.err { color: var(--neq); font-weight: 600; }
+@media (max-width: 640px) {
+  .player { grid-template-columns: 1fr; }
+  .play { width: 100%; }
+  .tally { grid-template-columns: 1fr; gap: 8px; }
+  .tally div { padding: 0; } .tally div + div { border-left: 0; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow" id="snap">pequalnp.com · public record</p>
+    <h1><span class="eq">P = NP</span> vs <span class="neq">P ≠ NP</span></h1>
+    <p class="dek">A tug of war over the agent fleet's record. Lemmas line up on the side of the answer they support, one rope per theme. Open claims stand at the front, checked ones farther back, and every lemma stands in front of whatever it rests on. Gold means recently active. Lasers are kills.</p>
+  </header>
+
+  <section class="panel player" aria-label="Playback">
+    <button class="play" id="play" type="button">Play</button>
+    <div class="scrub">
+      <label class="when" for="time"><span id="when">Loading the record…</span><span id="elapsed"></span></label>
+      <input type="range" id="time" min="0" max="100" step="1" value="100" disabled>
+    </div>
+    <div class="tally" id="tally"></div>
+  </section>
+
+  <section class="panel" aria-label="Overall proposition">
+    <div class="mhead"><h2>The knot: a toy confidence in P ≠ NP</h2><span class="mval" id="mval">50.0%<small>toward P ≠ NP</small></span></div>
+    <div>
+      <svg class="spark" id="spark" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+        <line class="base" x1="0" y1="100" x2="1000" y2="100" vector-effect="non-scaling-stroke"></line>
+        <line class="half" x1="0" y1="50" x2="1000" y2="50" vector-effect="non-scaling-stroke"></line>
+        <path class="line" id="sparkline" d="" vector-effect="non-scaling-stroke"></path>
+        <line class="now" id="sparknow" x1="0" y1="0" x2="0" y2="100" vector-effect="non-scaling-stroke"></line>
+      </svg>
+      <div class="sparkaxis"><span id="sparkfrom">Start</span><span>height: 0% (P = NP) to 100% (P ≠ NP), dashed at 50%</span><span>snapshot</span></div>
+    </div>
+    <div class="ctl">
+      <div class="grp" role="group" aria-label="Starting belief"><span class="lab">Start from</span>
+        <button class="seg" type="button" id="prior-none" aria-pressed="true">No prior · 50%</button>
+        <button class="seg" type="button" id="prior-poll" aria-pressed="false">Experts' 2019 poll · 88%</button></div>
+      <div class="sl"><label for="eps">One checked chain step moves belief by <b id="epsv">0.010</b> log-odds</label><input type="range" id="eps" min="0" max="100" step="1" value="59"></div>
+    </div>
+    <p class="note" id="mnote"></p>
+  </section>
+
+  <div class="ctl">
+    <div class="grp" role="group" aria-label="Lemma size"><span class="lab">Size by</span>
+      <button class="seg" type="button" id="size-crit" aria-pressed="true">Criticality</button>
+      <button class="seg" type="button" id="size-effort" aria-pressed="false">Effort</button></div>
+    <div class="grp" role="group" aria-label="Show"><span class="lab">Show</span>
+      <button class="seg" type="button" id="show-past" aria-pressed="true">Past kills</button>
+      <button class="seg" type="button" id="show-plan" aria-pressed="true">Plan links</button></div>
+  </div>
+
+  <div class="scroll"><div class="stage" id="stage">
+    <canvas id="field" role="img" aria-label="Tug of war field of lemmas"></canvas>
+    <div class="tip" id="tip" hidden></div>
+  </div></div>
+  <p class="hint">Hover or tap a lemma for details. On a phone, scroll the field sideways. Pause or drag the time bar to inspect a moment.</p>
+  <div class="legend" id="legend" aria-label="Legend"></div>
+
+  <section class="panel detail" id="detail" aria-live="polite"></section>
+
+  <section>
+    <h2>How to read the field</h2>
+    <dl class="read">
+      <div><dt>The claim</dt><dd>The knot at midfield where every rope ties in. No lemma in the record states P ≠ NP; P = NP appears as the P = NP search's goal, "SAT is in P", which is equivalent to it. The knot slides with the toy model below the play bar but stays in the grey area, since only a proof could pull it out. Tap it for the bridges and barriers.</dd></div>
+      <div><dt>Sides</dt><dd>The answer a lemma is evidence for. Right: geometric complexity theory, proof complexity, circuit lower bounds, and the lower bounds the P = NP search used to kill its own candidate algorithms. Left: the P = NP search's goal and its candidate algorithms. The grey middle holds meta-complexity and known results, which pull neither way.</dd></div>
+      <div><dt>Ropes</dt><dd>One row per theme, plus one for each program's chain toward its target. Theme rules are keyword matches over the site's search index.</dd></div>
+      <div><dt>Distance from midfield</dt><dd>Strength. Open claims stand at the front. Checked lemmas stand farther back, and farther still the more lemmas rest on them. A lemma always stands in front of what it rests on, so a chain reads as a stack from its target at the front to its foundations at the back.</dd></div>
+      <div><dt>Color</dt><dd>Activity: gold when just proposed or settled, cooling to dull over hours of quiet. Dark grey is out of play: killed (with a cross), or faded support whose only use was killed or withdrawn.</dd></div>
+      <div><dt>Size</dt><dd>Criticality: plan role (target, hard link, chain step) plus everything that rests on it. Or effort: attempts recorded, available for the two sides only.</dd></div>
+      <div><dt>Lasers</dt><dd>Kills. The project refutes a lemma by checking its exact negation, its twin. Twins stand as snipers in the opposing end zone and pull nothing. Blue lasers kill P ≠ NP evidence, red lasers kill P = NP evidence, white ones fall in the grey middle. Lemmas a kill rests on stay in play.</dd></div>
+    </dl>
+  </section>
+
+  <footer>
+    <span id="source">Data: the public export at data.pequalnp.com.</span>
+    <span id="attnote"></span>
+    <span>An independent view of public data. Not made by or affiliated with pequalnp.com. Plan links follow each program's own list of steps and are not proofs; solid links are the record's proven "rests on" links.</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const STATUS = ['checked', 'conjecture', 'in_work', 'refuted', 'blocked', 'retired'];
+  const WORD = { checked: 'Checked', conjecture: 'Open conjecture', in_work: 'In work', refuted: 'Killed', blocked: 'Ruled dead', retired: 'Retired' };
+  const ROLE = ['', 'Chain step', 'Hard link', 'Program target'];
+  const SIDE_WORD = { '-1': 'P = NP', '0': 'Neither (grey middle)', '1': 'P ≠ NP' };
+  const GREY_FLASH = 30, TZ = 'America/Los_Angeles', PLAY_SECONDS = 50, LASER = 110, HEAT = 420, GAP = 0.034, B = 0.2;
+  const PULL = { target: 10, hard: 4, chain: 1, helper: 0.05, kill: 1, candidate: 0.5 };
+  const POLL = Math.log(0.88 / 0.12);
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => { const n = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else n.setAttribute(k, v); } n.append(...kids.filter((k) => k != null)); return n; };
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = (paint) => { const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 14 14'); s.setAttribute('aria-hidden', 'true'); paint((tag, a) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(a)) n.setAttribute(k, v); s.append(n); }); return s; };
+  const fmtPT = (ms, o) => new Intl.DateTimeFormat('en-US', { timeZone: TZ, ...o }).format(new Date(ms));
+  const whenPT = (ms) => `${fmtPT(ms, { weekday: 'short', month: 'short', day: 'numeric' })}, ${fmtPT(ms, { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase()} PT`;
+  const n = (x) => x.toLocaleString('en-US');
+  function hash(a, b, salt) { let x = Math.imul(a + 1, 73856093) ^ Math.imul(b + 7, 19349663) ^ Math.imul(salt + 3, 83492791); x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); x = Math.imul(x ^ (x >>> 16), 0x45d9f3b); x ^= x >>> 16; return (x >>> 0) / 4294967296; }
+
+  let D, rows, P, N, t0, maxMin, idOf, byId, pk = {};
+  const side = [], sniper = [], sniperSide = [], attacker = [], killedBy = [], snipes = [], appear = [], crit = [], laneOf = [], attackChain = [];
+  let deps = [], sups = [], order = [], planLinks = [], attacks = [], lanesR = [], lanesM = [], laneL0 = null;
+  let X = [], Y = [], dShow = [], dGoal = [], faded = [], visible = [], heatC = [];
+  let T = 0, playing = false, lastTs = 0, sel = -1, hov = -1, geo, grid = null, colors, sizeMode = 'crit', showPast = true, showPlan = true;
+  const canvas = $('#field'), ctx = canvas.getContext('2d'), stage = $('#stage'), tip = $('#tip'), range = $('#time'), playBtn = $('#play');
+  const statusAt = (i, t) => (t < appear[i] ? -1 : t < rows[i][3] ? 1 : rows[i][2]);
+  const dead = (st) => st === 3 || st === 4 || st === 5;
+
+  function init(data) {
+    D = data; rows = data.rows; P = data.programs; N = rows.length;
+    for (const [i, p] of P.entries()) pk[p.id] = i;
+    t0 = Date.parse(data.source.started_at);
+    maxMin = Math.max(Math.ceil((Date.parse(data.source.generated_at) - t0) / 60000), ...rows.map((r) => r[3]));
+    idOf = (i) => `L-${P[rows[i][0]].key}-${String(rows[i][1]).padStart(3, '0')}`;
+    byId = new Map(rows.map((r, i) => [idOf(i), i]));
+    const aim = P.map((p) => (p.aims_at === 'p_eq_np' ? -1 : p.aims_at === 'p_neq_np' ? 1 : 0));
+    const alg = pk.p_eq_np_search, algP = P[alg], algChain = new Set(algP.chain.filter(Boolean));
+    for (let i = 0; i < N; i++) {
+      const r = rows[i], id = idOf(i);
+      appear[i] = r[15] >= 0 ? Math.min(r[15], r[3]) : r[3];
+      side[i] = aim[r[0]]; attackChain[i] = false; sniper[i] = false; attacker[i] = false; killedBy[i] = -2; snipes[i] = [];
+      if (r[0] === alg) side[i] = id === algP.target || /^candidate/i.test(D.titles[id] || '') ? -1 : 1, attackChain[i] = side[i] === 1;
+      else if (algChain.has(id)) { side[i] = 1; attackChain[i] = true; }
+    }
+    // attacks: the twin of a lemma on one side becomes a sniper in the other end zone
+    for (const [v, a] of data.attacks) {
+      killedBy[v] = a; attacks.push({ v, a, t: rows[v][3] });
+      if (a >= 0) { attacker[a] = true; snipes[a].push(v); if (side[v] !== 0 && side[a] === side[v]) { sniper[a] = true; sniperSide[a] = -side[v]; } }
+    }
+    // plan links: each program's own list of steps, skipping steps that were killed or withdrawn
+    const planList = (p) => { const L = [...p.chain.filter(Boolean), p.hard, p.target].filter((id, k, a) => id && a.indexOf(id) === k && byId.has(id)); return L.map((id) => byId.get(id)); };
+    for (const id of ['gct', 'proof_complexity', 'circuit_lower_bounds']) {
+      const L = planList(P[pk[id]]).filter((i) => !dead(rows[i][2]) && !attackChain[i] && side[i] === 1);
+      for (let k = 0; k + 1 < L.length; k++) planLinks.push([L[k], L[k + 1]]);
+    }
+    { const L = planList(algP).filter((i) => side[i] === 1 && !dead(rows[i][2]) && !snipesSide(i, -1)); const last = byId.get('L-alg-006'); if (last != null && !L.includes(last)) L.push(last);
+      for (let k = 0; k + 1 < L.length; k++) planLinks.push([L[k], L[k + 1]]); }
+    deps = Array.from({ length: N }, () => []); sups = Array.from({ length: N }, () => []);
+    const link = (s, d) => { if (s === d) return; deps[s].push(d); sups[d].push(s); };
+    for (const [s, d] of planLinks) link(s, d);
+    for (const [a, b] of D.edges) link(b, a); // a rests on b
+    // an order in which every lemma comes after everything resting on it
+    const inG = []; for (let i = 0; i < N; i++) if (deps[i].length || sups[i].length) inG.push(i);
+    const left = new Map(inG.map((i) => [i, deps[i].length])), q = inG.filter((i) => !deps[i].length);
+    while (q.length) { const i = q.shift(); order.push(i); for (const s of sups[i]) { const k = left.get(s) - 1; left.set(s, k); if (k === 0) q.push(s); } }
+    for (const i of inG) if (!order.includes(i)) order.push(i);
+    // criticality: plan role plus everything resting on it, directly or not
+    for (let i = 0; i < N; i++) {
+      const seen = new Set(), st = [...deps[i]]; while (st.length) { const j = st.pop(); if (seen.has(j)) continue; seen.add(j); st.push(...deps[j]); }
+      crit[i] = [0, 1, 4, 6][rows[i][7]] + seen.size;
+    }
+    buildLanes();
+    T = maxMin; range.max = String(maxMin); range.value = String(maxMin); range.disabled = false;
+    $('#snap').textContent = `pequalnp.com · public record · snapshot ${whenPT(Date.parse(data.source.generated_at))}`;
+    $('#source').textContent = `Data: the public export at data.pequalnp.com (layout ${data.source.layout}, version ${data.source.version}), read ${whenPT(Date.parse(data.source.generated_at))}. ${n(N)} lemmas, ${n(D.edges.length)} proven rests-on links, ${n(planLinks.length)} plan links.`;
+    const named = data.attacks.filter(([v, a]) => a >= 0).length;
+    $('#attnote').textContent = `Kills: ${n(data.attacks.length)}. The killer is named in the record for the two sides and matched for the grey middle by the twin rule (the adjacent lemma checked in the same minute, true in every case sampled): ${n(named)} have a twin, ${n(data.attacks.length - named)} were refuted by a counterexample file with no lemma of its own.`;
+    legend(); initMeter(); controls();
+    selectClaim(false);
+    new ResizeObserver(() => { layout(); frameUpdate(true); draw(); }).observe(stage);
+    layout(); frameUpdate(true); draw(); tally();
+    if (document.fonts) document.fonts.ready.then(() => draw());
+  }
+  function snipesSide(i, s) { return snipes[i].some((v) => side[v] === s); }
+
+  function buildLanes() {
+    const algP = P[pk.p_eq_np_search];
+    laneL0 = { name: 'P = NP search: goal and candidate algorithms', members: [] };
+    const r0 = { name: 'Lower bounds used to kill candidate algorithms', members: [] };
+    lanesR = [r0];
+    for (let i = 0; i < N; i++) { if (sniper[i]) continue; if (side[i] === -1) laneL0.members.push(i); else if (side[i] === 1 && attackChain[i]) r0.members.push(i); }
+    for (const id of ['gct', 'proof_complexity', 'circuit_lower_bounds']) {
+      const pi = pk[id], p = P[pi], plan = new Set([...p.chain.filter(Boolean), p.hard, p.target]);
+      const short = { gct: 'GCT', proof_complexity: 'Proof complexity', circuit_lower_bounds: 'Circuit bounds' }[id];
+      const chain = { name: `${short}: chain to target`, members: [] }; lanesR.push(chain);
+      const themes = D.themes[p.key].map((t) => ({ name: `${short}: ${t.name}`, members: [] }));
+      for (let i = 0; i < N; i++) { if (rows[i][0] !== pi || sniper[i] || side[i] !== 1 || attackChain[i]) continue; (plan.has(idOf(i)) ? chain : themes[rows[i][14]]).members.push(i); }
+      lanesR.push(...themes.filter((l) => l.members.length));
+    }
+    lanesM = [];
+    for (const id of ['meta_complexity', 'library']) {
+      const pi = pk[id], p = P[pi], short = id === 'library' ? 'Known' : 'Meta';
+      const themes = D.themes[p.key].map((t) => ({ name: `${short}: ${t.name}`, members: [] }));
+      for (let i = 0; i < N; i++) if (rows[i][0] === pi && side[i] === 0) themes[rows[i][14]].members.push(i);
+      lanesM.push(...themes.filter((l) => l.members.length));
+    }
+  }
+
+  // ---- geometry ----
+  function layout() {
+    const W = stage.clientWidth, top = 64, bottom = 26;
+    const hR = lanesR.map((l) => Math.max(/chain|kill/i.test(l.name) ? 50 : 38, 16 + 6.4 * Math.sqrt(l.members.length)));
+    const H = Math.round(top + hR.reduce((a, b) => a + b, 0) + bottom);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const fx0 = 6, fx1 = W - 6, ez = Math.max(46, (fx1 - fx0) * 0.06), cx = (fx0 + fx1) / 2, half = (fx1 - fx0) / 2 - ez;
+    geo = { W, H, top, fy1: H - bottom, fx0, fx1, ez, cx, half };
+    let y = top; lanesR.forEach((l, k) => { l.y0 = y; l.y1 = y + hR[k]; y = l.y1; });
+    laneL0.y0 = lanesR[0].y0; laneL0.y1 = lanesR[0].y1;
+    const hM = lanesM.map((l) => Math.sqrt(l.members.length) + 3), sm = hM.reduce((a, b) => a + b, 0); y = top;
+    lanesM.forEach((l, k) => { l.y0 = y; l.y1 = y + (hM[k] / sm) * (geo.fy1 - top); y = l.y1; });
+    // a strip at the top of each rope holds its label; lemmas stay below it
+    const place = (l, i) => { const r = rows[i]; laneOf[i] = l; Y[i] = l.y0 + 19 + hash(r[0], r[1], 2) * (l.y1 - l.y0 - 26); };
+    for (const l of [laneL0, ...lanesR]) l.members.forEach((i) => place(l, i));
+    for (const l of lanesM) { const pad = l.y1 - l.y0 > 24 ? 13 : 3; l.members.forEach((i) => { const r = rows[i]; laneOf[i] = l; Y[i] = l.y0 + pad + hash(r[0], r[1], 2) * (l.y1 - l.y0 - pad - 3); X[i] = cx + (hash(r[0], r[1], 1) * 2 - 1) * B * half * 0.94; }); }
+    for (let i = 0; i < N; i++) if (sniper[i]) { const v = snipes[i].find((x) => side[x] !== 0) ?? snipes[i][0]; const s = sniperSide[i]; X[i] = (s < 0 ? fx0 + ez * 0.5 : fx1 - ez * 0.5) + (hash(rows[i][0], rows[i][1], 5) - 0.5) * ez * 0.6; Y[i] = Y[v] ?? geo.top; }
+    grid = null;
+  }
+  const xOf = (s, d) => geo.cx + s * (B + (1 - B) * d) * geo.half;
+
+  // ---- per-moment state: who is visible, strength, stacking, fading, heat ----
+  function frameUpdate(snap, dt = 0) {
+    for (let i = 0; i < N; i++) visible[i] = statusAt(i, T) >= 0;
+    const liveDeps = (i) => { let c = 0; for (const j of deps[i]) if (visible[j] && !dead(statusAt(j, T))) c++; return c; };
+    for (let i = 0; i < N; i++) {
+      if (side[i] === 0 || sniper[i] || !visible[i]) continue;
+      const st = statusAt(i, T), h = hash(rows[i][0], rows[i][1], 1);
+      dGoal[i] = st === 0 ? 0.3 + 0.12 * h + 0.28 * Math.min(1, Math.log2(1 + liveDeps(i)) / 3) : st === 2 ? 0.08 + 0.06 * h : 0.03 + 0.08 * h;
+    }
+    for (const i of order) { // stand in front of what you rest on: supports go behind their dependents
+      if (side[i] === 0 || sniper[i] || !visible[i]) continue;
+      for (const j of deps[i]) if (visible[j] && side[j] === side[i] && !sniper[j]) dGoal[i] = Math.max(dGoal[i], Math.min(0.985, dGoal[j] + GAP));
+    }
+    for (let i = 0; i < N; i++) faded[i] = false;
+    for (const i of order) { // support whose every use was killed or withdrawn fades, unless it powers a kill
+      if (!visible[i] || statusAt(i, T) !== 0 || attacker[i]) continue;
+      let any = 0, gone = 0; for (const j of deps[i]) if (visible[j]) { any++; if (dead(statusAt(j, T)) || faded[j]) gone++; }
+      faded[i] = any > 0 && gone === any;
+    }
+    const k = snap ? 1 : Math.min(1, dt * 5);
+    for (let i = 0; i < N; i++) {
+      if (side[i] === 0 || sniper[i] || !visible[i]) continue;
+      dShow[i] = dShow[i] == null || snap ? dGoal[i] : dShow[i] + (dGoal[i] - dShow[i]) * k;
+      X[i] = xOf(side[i], dShow[i]);
+    }
+    grid = null;
+  }
+  const lastTouch = (i) => { const r = rows[i]; return T >= r[3] ? r[3] : appear[i]; };
+  function heat(i) { const st = statusAt(i, T); if (st === 2) return 1; return Math.exp(-(T - lastTouch(i)) / HEAT); }
+  function heatColor(h) { // cold to warm to hot, one hue
+    const lerp = (a, b, t) => a.map((v, k) => Math.round(v + (b[k] - v) * t));
+    const [c0, c1, c2] = colors.heat; const rgb = h < 0.5 ? lerp(c0, c1, h * 2) : lerp(c1, c2, (h - 0.5) * 2);
+    return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+  }
+  const radius = (i) => {
+    if (sizeMode === 'effort') { const a = rows[i][12]; return a > 0 ? 2.6 + 1.7 * Math.sqrt(a + 2 * Math.max(0, rows[i][13])) : 2.6; }
+    return Math.min(12, 2.6 + 1.25 * Math.sqrt(crit[i]));
+  };
+
+  // ---- drawing ----
+  function tokens() {
+    const cs = getComputedStyle(document.documentElement), g = (k) => cs.getPropertyValue(k).trim();
+    const hex = (h) => { const m = h.replace('#', ''); return [0, 2, 4].map((k) => parseInt(m.slice(k, k + 2), 16)); };
+    return { field: g('--field'), band: g('--band'), line: g('--line'), goal: g('--goal'), ezl: g('--ez-l'), ezr: g('--ez-r'), ezt: g('--ez-text'), edge: g('--edge'), rope: g('--rope'), eq: g('--eq'), neq: g('--neq'), nl: g('--neutral-laser'), fg: g('--fg'), muted: g('--muted'), card: g('--card'), deadC: g('--dead'), deadM: g('--dead-mark'), dotn: g('--dot-n'), heat: [hex(g('--cold')), hex(g('--warm')), hex(g('--hot'))] };
+  }
+  function node(i, x, y, r) {
+    const st = statusAt(i, T); if (st < 0) return;
+    const c = colors;
+    if (st === 3 || st === 4) { ctx.beginPath(); ctx.arc(x, y, Math.max(2, r - 0.5), 0, 7); ctx.fillStyle = c.deadC; ctx.fill(); ctx.strokeStyle = c.deadM; ctx.lineWidth = 1.4; const a = r * 0.75 + 1; ctx.beginPath(); ctx.moveTo(x - a, y - a); ctx.lineTo(x + a, y + a); ctx.moveTo(x + a, y - a); ctx.lineTo(x - a, y + a); ctx.stroke(); return; }
+    if (st === 5) { ctx.strokeStyle = c.deadM; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x - r, y); ctx.lineTo(x + r, y); ctx.stroke(); return; }
+    const col = faded[i] ? c.deadC : heatColor(heat(i));
+    if (st === 0) { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = col; ctx.fill(); }
+    else { ctx.beginPath(); ctx.arc(x, y, Math.max(1.8, r - 0.6), 0, 7); ctx.fillStyle = c.field; ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke(); if (st === 2) { ctx.beginPath(); ctx.arc(x, y, r * 0.4, 0, 7); ctx.fillStyle = col; ctx.fill(); } }
+    if (rows[i][7] >= 2) { ctx.beginPath(); ctx.arc(x, y, r + 3.5, 0, 7); ctx.setLineDash([2, 2]); ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]); }
+  }
+  function sniperMark(i) {
+    const st = statusAt(i, T); if (st < 0) return; const s = sniperSide[i], x = X[i], y = Y[i], r = 4.5;
+    ctx.beginPath(); ctx.moveTo(x - s * r, y - r); ctx.lineTo(x + s * r, y); ctx.lineTo(x - s * r, y + r); ctx.closePath();
+    ctx.fillStyle = heatColor(heat(i)); ctx.globalAlpha = 0.9; ctx.fill(); ctx.globalAlpha = 1;
+  }
+  const label = (txt, x, y, font, color, align = 'left') => { ctx.font = font; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = colors.field; ctx.strokeText(txt, x, y); ctx.fillStyle = color; ctx.fillText(txt, x, y); };
+  function laser(x1, y1, x2, y2, col, k) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+    ctx.strokeStyle = col; ctx.globalAlpha = 0.18 * k; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.globalAlpha = 0.9 * k; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.globalAlpha = k; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x2, y2, 3 + 6 * (1 - k), 0, 7); ctx.globalAlpha = 0.5 * k; ctx.fill();
+    ctx.restore();
+  }
+  function draw() {
+    if (!geo) return;
+    colors = tokens(); const c = colors, { W, H, top, fy1, fx0, fx1, ez, cx, half } = geo;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = c.field; ctx.fillRect(fx0, top, fx1 - fx0, fy1 - top);
+    ctx.fillStyle = c.ezl; ctx.fillRect(fx0, top, ez, fy1 - top); ctx.fillStyle = c.ezr; ctx.fillRect(fx1 - ez, top, ez, fy1 - top);
+    ctx.fillStyle = c.band; ctx.fillRect(cx - B * half, top, 2 * B * half, fy1 - top);
+    ctx.save(); ctx.fillStyle = c.ezt; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `800 ${Math.min(ez * 0.8, 60)}px "Big Shoulders Display", "Arial Narrow", sans-serif`;
+    ctx.translate(fx0 + ez / 2, (top + fy1) / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('P = NP', 0, 0); ctx.restore();
+    ctx.save(); ctx.fillStyle = c.ezt; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `800 ${Math.min(ez * 0.8, 60)}px "Big Shoulders Display", "Arial Narrow", sans-serif`;
+    ctx.translate(fx1 - ez / 2, (top + fy1) / 2); ctx.rotate(Math.PI / 2); ctx.fillText('P ≠ NP', 0, 0); ctx.restore();
+    ctx.strokeStyle = c.goal; ctx.lineWidth = 2; for (const x of [cx - half, cx + half]) { ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, fy1); ctx.stroke(); }
+    // lane separators and labels
+    ctx.lineWidth = 1; ctx.strokeStyle = c.line;
+    for (const l of lanesR) { ctx.beginPath(); ctx.moveTo(cx + B * half, l.y1 + 0.5); ctx.lineTo(cx + half, l.y1 + 0.5); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(cx - half, laneL0.y1 + 0.5); ctx.lineTo(cx - B * half, laneL0.y1 + 0.5); ctx.stroke();
+    for (const l of lanesM) { ctx.beginPath(); ctx.moveTo(cx - B * half, l.y1 + 0.5); ctx.lineTo(cx + B * half, l.y1 + 0.5); ctx.stroke(); }
+    // ropes: one per lane, from midfield to the end zone
+    ctx.strokeStyle = c.rope; ctx.lineWidth = 2; ctx.setLineDash([6, 3]);
+    for (const l of lanesR) { const y = (l.y0 + l.y1) / 2; ctx.beginPath(); ctx.moveTo(cx + B * half, y); ctx.lineTo(cx + half, y); ctx.stroke(); }
+    { const y = (laneL0.y0 + laneL0.y1) / 2; ctx.beginPath(); ctx.moveTo(cx - half, y); ctx.lineTo(cx - B * half, y); ctx.stroke(); }
+    ctx.setLineDash([]);
+    // every rope ties into the claim at midfield; the knot slides with the toy model but stays in the grey area without a proof
+    const conf = confAt(T), kx = cx + (conf - 0.5) * 2 * B * half * 0.75, ky = (top + fy1) / 2; geo.knot = [kx, ky];
+    ctx.strokeStyle = c.rope; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.9; ctx.beginPath();
+    for (const l of lanesR) { const y = (l.y0 + l.y1) / 2; ctx.moveTo(cx + B * half, y); ctx.lineTo(kx + 26, ky); }
+    { const y = (laneL0.y0 + laneL0.y1) / 2; ctx.moveTo(cx - B * half, y); ctx.lineTo(kx - 26, ky); }
+    ctx.stroke(); ctx.globalAlpha = 1;
+    // links
+    if (showPlan) { ctx.strokeStyle = c.edge; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); for (const [s, d] of planLinks) if (visible[s] && visible[d]) { ctx.moveTo(X[s], Y[s]); ctx.lineTo(X[d], Y[d]); } ctx.stroke(); ctx.setLineDash([]); }
+    for (const mid of [true, false]) { // proven links; fainter inside the grey middle, where they only clutter
+      ctx.strokeStyle = c.edge; ctx.lineWidth = mid ? 1 : 1.2; ctx.globalAlpha = mid ? 0.3 : 1; ctx.beginPath();
+      for (const [a, b] of D.edges) if (visible[a] && visible[b] && statusAt(a, T) !== 5 && (side[a] === 0 && side[b] === 0) === mid) { ctx.moveTo(X[a], Y[a]); ctx.lineTo(X[b], Y[b]); }
+      ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    if (sel >= 0) { ctx.strokeStyle = c.fg; ctx.lineWidth = 1.6; ctx.beginPath(); for (const j of [...deps[sel], ...sups[sel]]) if (visible[j]) { ctx.moveTo(X[sel], Y[sel]); ctx.lineTo(X[j], Y[j]); } ctx.stroke(); }
+    // past kills on the two sides
+    if (showPast) { ctx.lineWidth = 1; ctx.globalAlpha = 0.22; for (const at of attacks) { if (T < at.t || side[at.v] === 0) continue; const [sx, sy] = src(at); ctx.strokeStyle = side[at.v] > 0 ? c.eq : c.neq; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(X[at.v], Y[at.v]); ctx.stroke(); } ctx.globalAlpha = 1; }
+    // the grey middle: small marks colored by activity
+    for (let i = 0; i < N; i++) {
+      if (side[i] !== 0 || !visible[i]) continue; const st = statusAt(i, T);
+      if (crit[i] > 0) { node(i, X[i], Y[i], Math.min(7, radius(i) * 0.8)); continue; }
+      ctx.fillStyle = dead(st) ? c.deadC : faded[i] ? c.deadC : heatColor(heat(i)); ctx.globalAlpha = st === 0 ? 0.9 : st === 1 || st === 2 ? 0.55 : 0.8;
+      ctx.fillRect(X[i] - 1, Y[i] - 1, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+    // the sides: biggest first so small ones stay visible
+    const sideIdx = []; for (let i = 0; i < N; i++) if (side[i] !== 0 && !sniper[i] && visible[i]) sideIdx.push(i);
+    sideIdx.sort((a, b) => radius(b) - radius(a));
+    for (const i of sideIdx) node(i, X[i], Y[i], radius(i));
+    for (let i = 0; i < N; i++) if (sniper[i]) sniperMark(i);
+    // lasers: kills in progress
+    for (const at of attacks) {
+      const dt = T - at.t, lim = side[at.v] === 0 ? GREY_FLASH : LASER; if (dt < 0 || dt > lim || T >= maxMin) continue;
+      const k = 1 - dt / LASER, [sx, sy] = src(at), col = side[at.v] > 0 ? c.eq : side[at.v] < 0 ? c.neq : c.nl;
+      // grey-middle kills come by the thousand late on: thin brief flashes there, glowing lasers only on the two sides
+      if (side[at.v] === 0) { ctx.globalAlpha = 0.4 * (1 - dt / GREY_FLASH); ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(X[at.v], Y[at.v]); ctx.stroke(); ctx.globalAlpha = 1; } else laser(sx, sy, X[at.v], Y[at.v], col, k);
+    }
+    // labels
+    for (const l of lanesR) label(l.name, cx + half - 6, l.y0 + 9, '500 10.5px "IBM Plex Mono", ui-monospace, monospace', c.muted, 'right');
+    label(laneL0.name, cx - half + 6, laneL0.y0 + 9, '500 10.5px "IBM Plex Mono", ui-monospace, monospace', c.muted, 'left');
+    for (const l of lanesM) if (l.y1 - l.y0 > 20) label(l.name, cx - B * half + 5, l.y0 + 8, '500 9.5px "IBM Plex Mono", ui-monospace, monospace', c.muted, 'left');
+    label('No checked evidence for P = NP', (cx - half + cx - B * half) / 2, (laneL0.y1 + fy1) / 2, '700 22px "Big Shoulders Display", "Arial Narrow", sans-serif', c.muted, 'center');
+    for (const i of sideIdx) if (rows[i][7] === 3) { const s = side[i]; label('target', X[i] - s * (radius(i) + 6), Y[i], '600 11px "Inter", system-ui, sans-serif', c.fg, s > 0 ? 'right' : 'left'); }
+    // the claim itself: the knot every rope ties into
+    const kc = conf > 0.5 ? c.neq : conf < 0.5 ? c.eq : c.muted, alg1 = byId.get('L-alg-001');
+    if (alg1 != null && visible[alg1]) {
+      ctx.strokeStyle = c.eq; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(X[alg1], Y[alg1]); ctx.lineTo(kx - 26, ky); ctx.stroke();
+      label('SAT in P ≡ P = NP', (X[alg1] + kx) / 2 - 8, (Y[alg1] + ky) / 2, '600 11px "Inter", system-ui, sans-serif', c.eq, 'right');
+    }
+    ctx.beginPath(); ctx.arc(kx, ky, 30, 0, 7); ctx.fillStyle = c.card; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = kc; ctx.stroke();
+    ctx.beginPath(); ctx.arc(kx, ky, 35, 0, 7); ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.font = '800 19px "Big Shoulders Display", "Arial Narrow", sans-serif'; ctx.fillStyle = c.fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('P ?= NP', kx, ky + 1);
+    label('the claim', kx, ky + 47, '600 12px "Inter", system-ui, sans-serif', c.fg, 'center');
+    label('no lemma states P ≠ NP', kx, ky + 62, '500 10.5px "IBM Plex Mono", ui-monospace, monospace', c.muted, 'center');
+    const ry = 30;
+    label('◀ PULLS TOWARD P = NP', fx0 + 4, ry, '700 15px "Big Shoulders Display", "Arial Narrow", sans-serif', c.eq, 'left');
+    label('PULLS TOWARD P ≠ NP ▶', fx1 - 4, ry, '700 15px "Big Shoulders Display", "Arial Narrow", sans-serif', c.neq, 'right');
+    label('every rope ties into the claim at midfield', cx, ry, '500 11px "IBM Plex Mono", ui-monospace, monospace', c.muted, 'center');
+    for (const [i, w] of [[sel, 2], [hov, 1.5]]) { if (i < 0 || !visible[i]) continue; ctx.beginPath(); ctx.arc(X[i], Y[i], (side[i] === 0 && !crit[i] ? 2 : radius(i)) + 5, 0, 7); ctx.lineWidth = w; ctx.strokeStyle = c.fg; ctx.stroke(); }
+    canvas.setAttribute('aria-label', `Tug of war at ${whenPT(t0 + T * 60000)}: ${tallyText()}`);
+  }
+  function src(at) {
+    if (at.a >= 0) return [X[at.a], Y[at.a]];
+    const s = side[at.v]; if (s === 0) return [X[at.v] + 16, Y[at.v] - 16];
+    return [s > 0 ? geo.fx0 + geo.ez * 0.5 : geo.fx1 - geo.ez * 0.5, Y[at.v]];
+  }
+
+  // ---- tally, meter, playback ----
+  function counts() {
+    const c = { '-1': [0, 0, 0], 0: [0, 0, 0], 1: [0, 0, 0] };
+    for (let i = 0; i < N; i++) { if (sniper[i] || !visible[i]) continue; const st = statusAt(i, T), a = c[side[i]]; if (st === 0 && !faded[i]) a[0]++; else if (st === 1 || st === 2) a[1]++; else if (st === 3 || st === 4) a[2]++; }
+    return c;
+  }
+  const tallyText = () => { const c = counts(); return `${c[-1][0]} checked toward P = NP, ${n(c[0][0])} in the grey middle, ${c[1][0]} toward P ≠ NP.`; };
+  function tally() {
+    const c = counts(), box = $('#tally'); box.replaceChildren();
+    for (const [s, cls, name] of [[-1, 'e', 'Pulling to P = NP'], [0, '', 'Grey middle'], [1, 'n', 'Pulling to P ≠ NP']]) {
+      const v = c[s]; box.append(el('div', {}, el('b', { class: cls }, name, el('em', { text: n(v[0]) })), `checked and in play · ${n(v[1])} open · ${n(v[2])} killed`));
+    }
+    $('#when').textContent = whenPT(t0 + T * 60000);
+    $('#elapsed').textContent = T >= maxMin ? 'snapshot' : `hour ${Math.round(T / 60)} of ${Math.round(maxMin / 60)}`;
+    range.value = String(Math.round(T)); meter();
+  }
+  let mPrior = 0, mEps = 0.01, ev = [], cumPos = [], cumNeg = [];
+  function initMeter() {
+    for (let i = 0; i < N; i++) {
+      const r = rows[i]; if (sniper[i]) continue; let w = 0;
+      const byRole = r[7] === 3 ? PULL.target : r[7] === 2 ? PULL.hard : r[7] === 1 || deps[i].length ? PULL.chain : PULL.helper;
+      if (r[2] === 0 && side[i] !== 0) w = attackChain[i] ? PULL.kill : side[i] * byRole;
+      else if ((r[2] === 3 || r[2] === 4) && side[i] === -1 && /^candidate/i.test(D.titles[idOf(i)] || '')) w = PULL.candidate;
+      if (w) ev.push([r[3], w]);
+    }
+    ev.sort((a, b) => a[0] - b[0]); let p = 0, q = 0; cumPos = ev.map((e) => (p += Math.max(0, e[1]))); cumNeg = ev.map((e) => (q += Math.max(0, -e[1])));
+    $('#sparkfrom').textContent = fmtPT(t0, { weekday: 'short', month: 'short', day: 'numeric' });
+    const setPrior = (v) => { mPrior = v; $('#prior-none').setAttribute('aria-pressed', String(v === 0)); $('#prior-poll').setAttribute('aria-pressed', String(v !== 0)); spark(); meter(); draw(); };
+    $('#prior-none').addEventListener('click', () => setPrior(0)); $('#prior-poll').addEventListener('click', () => setPrior(POLL));
+    const eps = $('#eps'), setEps = () => { mEps = 0.001 * Math.pow(50, Number(eps.value) / 100); $('#epsv').textContent = mEps.toFixed(mEps < 0.01 ? 4 : 3); spark(); meter(); draw(); };
+    eps.addEventListener('input', setEps); mEps = 0.001 * Math.pow(50, Number(eps.value) / 100); $('#epsv').textContent = mEps.toFixed(3); spark();
+  }
+  function pullAt(t) { let lo = 0, hi = ev.length; while (lo < hi) { const m = (lo + hi) >> 1; if (ev[m][0] <= t) lo = m + 1; else hi = m; } return lo ? [cumPos[lo - 1], cumNeg[lo - 1]] : [0, 0]; }
+  const confAt = (t) => { const [p, q] = pullAt(t); return 1 / (1 + Math.exp(-(mPrior + mEps * (p - q)))); };
+  function spark() { let d = ''; for (let k = 0; k <= 200; k++) { const t = (k / 200) * maxMin; d += `${k ? 'L' : 'M'}${k * 5},${(100 - confAt(t) * 100).toFixed(2)}`; } $('#sparkline').setAttribute('d', d); }
+  function meter() {
+    const cf = confAt(T), [p, q] = pullAt(T);
+    $('#mval').firstChild.nodeValue = `${(cf * 100).toFixed(1)}%`;
+    const x = ((T / maxMin) * 1000).toFixed(1), now = $('#sparknow'); now.setAttribute('x1', x); now.setAttribute('x2', x);
+    $('#mnote').textContent = `By ${whenPT(t0 + T * 60000)}: ${p.toFixed(1)} points of pull toward P ≠ NP, ${q.toFixed(1)} toward P = NP. Points per checked lemma: program target ${PULL.target}, hard link ${PULL.hard}, chain step or support ${PULL.chain}, other ${PULL.helper}; each lower bound used to kill a candidate algorithm ${PULL.kill}; each killed candidate ${PULL.candidate}. Snipers, killed and withdrawn lemmas, and the grey middle pull nothing. The weights are invented: slide them to see how much the flag depends on them. Real confidence in P vs NP should barely move on results like these.`;
+  }
+  function frame(ts) {
+    if (!playing) return;
+    const dt = lastTs ? (ts - lastTs) / 1000 : 0; lastTs = ts;
+    T = Math.min(maxMin, T + (dt * maxMin) / PLAY_SECONDS);
+    frameUpdate(false, dt); draw(); tally();
+    if (T >= maxMin) { pause(); return; }
+    requestAnimationFrame(frame);
+  }
+  function play() { if (T >= maxMin) { T = 0; frameUpdate(true); } playing = true; lastTs = 0; tip.hidden = true; hov = -1; playBtn.textContent = 'Pause'; requestAnimationFrame(frame); }
+  function pause() { playing = false; playBtn.textContent = T >= maxMin ? 'Replay' : 'Resume'; frameUpdate(true); draw(); tally(); }
+  playBtn.addEventListener('click', () => (playing ? pause() : play()));
+  range.addEventListener('input', () => { T = Number(range.value); if (playing) pause(); frameUpdate(true); draw(); tally(); });
+
+  function controls() {
+    const pair = (a, b, on) => { $(a).setAttribute('aria-pressed', String(on)); $(b).setAttribute('aria-pressed', String(!on)); };
+    $('#size-crit').addEventListener('click', () => { sizeMode = 'crit'; pair('#size-crit', '#size-effort', true); draw(); });
+    $('#size-effort').addEventListener('click', () => { sizeMode = 'effort'; pair('#size-crit', '#size-effort', false); draw(); });
+    $('#show-past').addEventListener('click', (e) => { showPast = !showPast; e.currentTarget.setAttribute('aria-pressed', String(showPast)); draw(); });
+    $('#show-plan').addEventListener('click', (e) => { showPlan = !showPlan; e.currentTarget.setAttribute('aria-pressed', String(showPlan)); draw(); });
+  }
+  function legend() {
+    const box = $('#legend');
+    box.append(el('span', {}, el('i', { class: 'heat' }), 'Activity: quiet to just touched'));
+    box.append(el('span', {}, svg((a) => a('circle', { cx: 7, cy: 7, r: 5, fill: 'var(--warm)' })), 'Checked'));
+    box.append(el('span', {}, svg((a) => a('circle', { cx: 7, cy: 7, r: 4.5, fill: 'none', stroke: 'var(--warm)', 'stroke-width': 1.6 })), 'Open'));
+    box.append(el('span', {}, svg((a) => { a('circle', { cx: 7, cy: 7, r: 4.5, fill: 'var(--dead)' }); a('path', { d: 'M3 3 11 11 M11 3 3 11', stroke: 'var(--dead-mark)', 'stroke-width': 1.5 }); }), 'Killed'));
+    box.append(el('span', {}, svg((a) => a('circle', { cx: 7, cy: 7, r: 5, fill: 'var(--dead)' })), 'Faded support'));
+    box.append(el('span', {}, svg((a) => a('path', { d: 'M3 2 12 7 3 12 Z', fill: 'var(--warm)' })), 'Sniper (a twin)'));
+    box.append(el('span', {}, svg((a) => a('path', { d: 'M1 7 H13', stroke: 'var(--eq)', 'stroke-width': 2.4 })), 'Blue laser: kills P ≠ NP evidence'));
+    box.append(el('span', {}, svg((a) => a('path', { d: 'M1 7 H13', stroke: 'var(--neq)', 'stroke-width': 2.4 })), 'Red laser: kills P = NP evidence'));
+    box.append(el('span', {}, svg((a) => a('path', { d: 'M1 11 13 3', stroke: 'var(--edge)', 'stroke-width': 1.4 })), 'Rests on'));
+    box.append(el('span', {}, svg((a) => a('path', { d: 'M1 11 13 3', stroke: 'var(--edge)', 'stroke-width': 1.4, 'stroke-dasharray': '2 2' })), 'Plan link'));
+  }
+
+  // ---- hover and select ----
+  function buildGrid() { grid = new Map(); for (let i = 0; i < N; i++) { if (!visible[i]) continue; const k = `${Math.floor(X[i] / 14)},${Math.floor(Y[i] / 14)}`; (grid.get(k) || grid.set(k, []).get(k)).push(i); } }
+  function nearest(x, y, rad) {
+    if (!grid) buildGrid(); let best = -1, bd = Infinity; const gx = Math.floor(x / 14), gy = Math.floor(y / 14);
+    for (let a = gx - 1; a <= gx + 1; a++) for (let b = gy - 1; b <= gy + 1; b++) for (const i of grid.get(`${a},${b}`) || []) {
+      const big = side[i] !== 0 || crit[i] > 0, d = Math.hypot(X[i] - x, Y[i] - y) - (big ? radius(i) * 0.8 + 2 : 0);
+      if (d < bd) { bd = d; best = i; }
+    }
+    return bd <= rad ? best : -1;
+  }
+  function facts(i) {
+    const r = rows[i], p = P[r[0]], parts = [`Program: ${p.title}`, sniper[i] ? `Sniper against ${SIDE_WORD[String(-sniperSide[i])]}` : `Pulls toward: ${SIDE_WORD[String(side[i])]}`];
+    if (laneOf[i]) parts.push(`Rope: ${laneOf[i].name}`);
+    if (r[7]) parts.push(`Plan role: ${ROLE[r[7]]}`);
+    parts.push(`Rests on ${sups[i].length} · rested on by ${deps[i].length}`, `Criticality ${crit[i]}`);
+    if (r[12] >= 0) parts.push(`Attempts ${r[12]}${r[13] > 0 ? ` (${r[13]} died)` : ''}`);
+    if (killedBy[i] !== -2) parts.push(killedBy[i] >= 0 ? `Killed by ${idOf(killedBy[i])}` : 'Killed by a counterexample file');
+    if (snipes[i].length) parts.push(`Killed ${snipes[i].map(idOf).join(', ')}`);
+    if (faded[i]) parts.push('Faded: every lemma it supported was killed or withdrawn');
+    parts.push(`Status since ${whenPT(t0 + r[3] * 60000)}`);
+    return parts;
+  }
+  function select(i, redraw = true) {
+    sel = i; const box = $('#detail'); box.replaceChildren();
+    if (i < 0) { box.append(el('p', { class: 'plain', text: 'Tap or hover any lemma to see it.' })); if (redraw) draw(); return; }
+    const r = rows[i], id = idOf(i);
+    box.append(el('div', { class: 'row1' }, el('span', { text: id }), el('span', { class: 'pill', text: WORD[STATUS[r[2]]] }), r[7] ? el('span', { class: 'pill', text: ROLE[r[7]] }) : null, sniper[i] ? el('span', { class: 'pill', text: 'Sniper' }) : null,
+      el('a', { href: `https://pequalnp.com/lemma#${id}`, target: '_blank', rel: 'noopener noreferrer', text: 'Open on pequalnp.com ↗' })),
+      el('p', { class: 'title', text: D.titles[id] || 'Title not in the public summary files. Its full statement is on pequalnp.com.' }),
+      D.plain[id] ? el('p', { class: 'plain', text: D.plain[id] }) : null,
+      el('p', { class: 'facts', text: facts(i).join('  ·  ') }));
+    if (redraw) draw();
+  }
+  function showTip(i, x, y) {
+    if (i < 0) { tip.hidden = true; return; }
+    const r = rows[i], id = idOf(i);
+    tip.replaceChildren(el('div', { class: 'id', text: `${id} · ${WORD[STATUS[statusAt(i, T)]] ?? ''}${sniper[i] ? ' · sniper' : ''}${r[7] ? ` · ${ROLE[r[7]]}` : ''}` }), el('div', { class: 't', text: D.titles[id] || laneOf[i]?.name || P[r[0]].title }));
+    tip.hidden = false; const tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.left = `${Math.max(4, Math.min(geo.W - tw - 4, x + 14))}px`; tip.style.top = `${y - th - 12 < 0 ? y + 16 : y - th - 12}px`;
+  }
+  // ---- the claim's own panel ----
+  function selectClaim(redraw = true) {
+    sel = -1; const box = $('#detail'); box.replaceChildren();
+    const link = (id) => el('a', { href: `https://pequalnp.com/lemma#${id}`, target: '_blank', rel: 'noopener noreferrer', text: id });
+    const p = (...kids) => el('p', { class: 'plain' }, ...kids);
+    box.append(
+      el('div', { class: 'row1' }, el('span', { text: 'The claim' }), el('span', { class: 'pill', text: 'Open' }), el('span', { class: 'pill', text: 'Not a lemma in the record' })),
+      el('p', { class: 'title', text: 'P vs NP: does every problem whose answer is easy to check also have an easy way to find it?' }),
+      p('The record defines P and NP in Lean, but no lemma states P ≠ NP. P = NP appears in disguise: ', link('L-alg-001'), ' "SAT is in P" is equivalent to it, because SAT is NP-complete (', link('L-lib-031'), ', checked) and an NP-complete language is in P exactly when P = NP (', link('L-lib-018'), ', checked).'),
+      p('No program target would settle the claim if proved. Proof complexity would need lower bounds for every proof system: that gives NP ≠ coNP, which implies P ≠ NP (', link('L-lib-043'), ', checked). Circuit bounds would need superpolynomial size; its target is n^1.01. Meta-complexity has a checked bridge, ', link('L-meta-16079'), ': large enough graph-representation lower bounds would put NP outside P/poly, though no family meeting its conditions is known. GCT works on algebraic circuits, which do not directly imply P ≠ NP.'),
+      p('Checked barriers rule out whole families of proof: oracles that collapse and that separate P and NP (', link('L-lib-061'), ', ', link('L-lib-062'), ') and algebrization (', link('L-lib-076'), ').'),
+      el('p', { class: 'facts', text: `The knot sits at ${(confAt(T) * 100).toFixed(1)}% on the toy model and slides with it, but stays inside the grey area: only a proof could pull it out.` }));
+    if (redraw) draw();
+  }
+  const onKnot = (x, y) => geo?.knot && Math.hypot(x - geo.knot[0], y - geo.knot[1]) < 34;
+  const pt = (e) => { const b = canvas.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+  canvas.addEventListener('pointermove', (e) => {
+    if (playing || e.pointerType === 'touch' || !geo) return; const [x, y] = pt(e);
+    if (onKnot(x, y)) { if (hov !== -1) { hov = -1; draw(); } tip.replaceChildren(el('div', { class: 'id', text: 'The claim' }), el('div', { class: 't', text: 'P ?= NP. Click for how the field connects to it.' })); tip.hidden = false; tip.style.left = `${Math.min(geo.W - 240, x + 14)}px`; tip.style.top = `${y + 16}px`; return; }
+    const i = nearest(x, y, 9); if (i !== hov) { hov = i; draw(); } showTip(i, x, y);
+  });
+  canvas.addEventListener('pointerleave', () => { if (hov !== -1) { hov = -1; draw(); } tip.hidden = true; });
+  canvas.addEventListener('click', (e) => { if (playing) pause(); const [x, y] = pt(e); if (onKnot(x, y)) { selectClaim(); return; } const i = nearest(x, y, 14); if (i >= 0) { select(i); showTip(i, x, y); } });
+
+  fetch('data.json').then((r) => { if (!r.ok) throw new Error(`data.json: HTTP ${r.status}`); return r.json(); }).then(init).catch((e) => {
+    $('#detail').replaceChildren(el('p', { class: 'err', text: `The data did not load (${e.message}). Reload the page to try again.` }));
+    console.error(e);
+  });
+})();
+</script>
