@@ -21,7 +21,7 @@
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--fg); font: 15px/1.5 var(--f-body); }
-.wrap { max-width: 1100px; margin: 0 auto; padding-block: 18px 0;
+.wrap { position: relative; max-width: 1100px; margin: 0 auto; padding-block: 18px 0;
   padding-left: max(14px, env(safe-area-inset-left, 0px)); padding-right: max(14px, env(safe-area-inset-right, 0px));
   display: grid; gap: 14px; }
 .eyebrow { font: 500 11.5px/1.3 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0; }
@@ -34,24 +34,23 @@ button { font: inherit; }
 a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 
 .stage { position: relative; width: 100%; }
-canvas { display: block; width: 100%; touch-action: pan-y; cursor: crosshair; border-radius: 10px; }
+canvas { display: block; width: 100%; touch-action: pan-y; cursor: crosshair; border-radius: 10px 10px 0 0; }
 .tip { position: absolute; z-index: 5; max-width: min(320px, 86%); background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 9px 11px; font-size: 13px; line-height: 1.4; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55); }
 .tip .id { font: 500 11.5px/1.3 var(--f-mono); color: var(--muted); }
 .tip .t { margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .tip .f { margin-top: 5px; font: 400 11.5px/1.45 var(--f-mono); color: var(--muted); }
 .tip a { color: var(--hot); }
 
-/* the scoreboard: pinned to the bottom of the screen like a TV score bug */
-.score { position: sticky; bottom: 0; z-index: 6; margin: 0 calc(-1 * max(14px, env(safe-area-inset-left, 0px))) 0;
-  padding: 8px max(14px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
-  background: rgba(9, 12, 11, 0.94); border-top: 1px solid var(--rule); backdrop-filter: blur(6px); }
-.board { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: stretch; max-width: 1100px; margin: 0 auto; }
-.team { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 8px; padding: 6px 10px; border-radius: 8px; background: var(--card); border: 1px solid var(--rule); min-width: 0; }
-.team .nm { font: 800 19px/1 var(--f-display); letter-spacing: 0.03em; white-space: nowrap; }
-.team .pts { grid-row: span 2; font: 800 38px/0.9 var(--f-display); font-variant-numeric: tabular-nums; }
+/* the scoreboard: right under the field, like the score strip at the bottom of a broadcast; each team's coaches sit beside its score */
+.score { margin-top: -6px; }
+.board { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: stretch; }
+.team { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 8px; padding: 8px 10px; border-radius: 10px; background: var(--card); border: 1px solid var(--rule); min-width: 0; }
+.team .nm { font: 800 20px/1 var(--f-display); letter-spacing: 0.03em; white-space: nowrap; }
+.team .pts { grid-row: span 2; font: 800 40px/0.9 var(--f-display); font-variant-numeric: tabular-nums; }
 .team .fd { font: 500 11px/1.2 var(--f-mono); color: var(--muted); white-space: nowrap; }
+.team .faces { grid-column: 1 / -1; gap: 6px; }
 .team.eq .nm, .team.eq .pts { color: var(--eq); } .team.neq .nm, .team.neq .pts { color: var(--neq); }
-.team.neq { grid-template-columns: auto 1fr; text-align: right; } .team.neq .pts { grid-column: 1; grid-row: 1 / span 2; }
+.team.neq { grid-template-columns: auto 1fr; text-align: right; } .team.neq .pts { grid-column: 1; grid-row: 1 / span 2; } .team.neq .faces { justify-content: flex-end; }
 .mid { display: grid; place-items: center; text-align: center; padding: 2px 4px; min-width: 92px; }
 .mid .clk { font: 600 13px/1.15 var(--f-mono); font-variant-numeric: tabular-nums; }
 .mid .per { font: 500 10.5px/1.2 var(--f-mono); color: var(--muted); }
@@ -63,8 +62,8 @@ canvas { display: block; width: 100%; touch-action: pan-y; cursor: crosshair; bo
 .bench.eq h3 { color: var(--eq); } .bench.neq h3 { color: var(--neq); }
 .lab { font: 500 10.5px/1.2 var(--f-mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin: 0; }
 .faces { display: flex; flex-wrap: wrap; gap: 8px; }
-.face { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font: 800 16px/1 var(--f-display); letter-spacing: 0.04em; color: var(--fg); background: var(--bg); border: 2px solid currentColor; cursor: pointer; padding: 0; }
-.bench.eq .face { color: var(--eq); } .bench.neq .face { color: var(--neq); }
+.face { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 800 14px/1 var(--f-display); letter-spacing: 0.04em; color: var(--fg); background: var(--bg); border: 2px solid currentColor; cursor: pointer; padding: 0; }
+.team.eq .face { color: var(--eq); } .team.neq .face { color: var(--neq); }
 .face span { color: var(--fg); }
 .players { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
 .players li { display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: 13px; min-width: 0; }
@@ -92,8 +91,8 @@ canvas { display: block; width: 100%; touch-action: pan-y; cursor: crosshair; bo
 footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule); padding: 12px 0 20px; display: grid; gap: 4px; }
 .err { color: var(--neq); font-weight: 600; }
 @media (max-width: 520px) {
-  .team .nm { font-size: 16px; } .team .pts { font-size: 32px; } .team .fd { font-size: 10px; }
-  .mid { min-width: 76px; } .benches { gap: 8px; } .bench { padding: 9px 10px; } .face { width: 38px; height: 38px; font-size: 15px; }
+  .board { gap: 6px; } .team { padding: 7px 8px; } .team .nm { font-size: 16px; } .team .pts { font-size: 32px; } .team .fd { font-size: 10px; }
+  .mid { min-width: 70px; } .benches { gap: 8px; } .bench { padding: 9px 10px; } .face { width: 30px; height: 30px; font-size: 13px; } .team .faces { gap: 5px; }
 }
 </style>
 
@@ -109,9 +108,17 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     <div class="tip" id="tip" hidden></div>
   </div>
 
-  <section class="benches" aria-label="Coaches and players">
-    <div class="bench eq"><h3>P = NP</h3><p class="lab">Coaches</p><div class="faces" id="coachesEq"></div><p class="lab">Players · lemmas checked</p><ul class="players" id="playersEq"></ul></div>
-    <div class="bench neq"><h3>P ≠ NP</h3><p class="lab">Coaches</p><div class="faces" id="coachesNeq"></div><p class="lab">Players · lemmas checked</p><ul class="players" id="playersNeq"></ul></div>
+  <section class="score" aria-label="Scoreboard: program targets proved, first downs, and each team's coaches">
+    <div class="board">
+      <div class="team eq"><span class="nm">P = NP</span><span class="pts" id="ptsEq">0</span><span class="fd">first downs <b id="fdEq">0</b></span><div class="faces" id="coachesEq" aria-label="P = NP coaches"></div></div>
+      <div class="mid"><span class="clk" id="clk">loading</span><span class="per" id="per"></span><button class="play" id="play" type="button">Play</button></div>
+      <div class="team neq"><span class="nm">P ≠ NP</span><span class="pts" id="ptsNeq">0</span><span class="fd">first downs <b id="fdNeq">0</b></span><div class="faces" id="coachesNeq" aria-label="P ≠ NP coaches"></div></div>
+    </div>
+  </section>
+
+  <section class="benches" aria-label="Players">
+    <div class="bench eq"><h3>P = NP</h3><p class="lab">Players · lemmas checked</p><ul class="players" id="playersEq"></ul></div>
+    <div class="bench neq"><h3>P ≠ NP</h3><p class="lab">Players · lemmas checked</p><ul class="players" id="playersNeq"></ul></div>
   </section>
 
   <section class="market" aria-label="Toy odds over time">
@@ -127,10 +134,10 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     <dl class="read">
       <div><dt>Truth zones</dt><dd>Each end zone holds the lemmas the Lean checker has proved on that side. Inside, every lemma stands in front of what it rests on, so foundations sit at the back.</dd></div>
       <div><dt>Grey field</dt><dd>Open lemmas, placed by our guess at how likely each is true: farther toward its zone means likelier. The guess uses the plan (a planned chain step leans true), citations, failed attempts and corrections. It will be wrong sometimes; a lemma that gets checked runs into the zone.</dd></div>
-      <div><dt>The ball</dt><dd>The claim itself. It moves into an end zone only on a proof. Lines run from each program's target to the ball: solid when the target would settle the claim, dashed with what is missing when it would not.</dd></div>
+      <div><dt>The ball</dt><dd>The claim itself, at midfield. It moves into an end zone only on a proof. Lines run from each program's target to the ball: solid when the target would settle the claim, dashed with what is missing when it would not.</dd></div>
       <div><dt>Score</dt><dd>Points are program targets proved: none yet. First downs are checked steps on a program's chain toward its target.</dd></div>
       <div><dt>The stands</dt><dd>Meta-complexity and known results pull neither way, so they sit along the sidelines. So do the snipers: a kill is recorded by proving a lemma's exact opposite, and that twin fires the laser.</dd></div>
-      <div><dt>Coaches and players</dt><dd>Coaches are well-known experts on record in each camp; tap a face for the quote and its source. Players are the most active on each side: the fleet's orchestrators and outside contributors, with the record's counts.</dd></div>
+      <div><dt>Coaches and players</dt><dd>Coaches sit with their team's score: well-known experts on record in each camp; tap a face for the quote and its source. Players are the most active on each side: the fleet's orchestrators and outside contributors, with the record's counts.</dd></div>
     </dl>
   </section>
 
@@ -139,13 +146,6 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     <span>An independent view of public data. Not made by or affiliated with pequalnp.com. Our odds and truth guesses are toys with invented weights; counts are not probabilities.</span>
   </footer>
 
-  <div class="score" aria-label="Scoreboard">
-    <div class="board">
-      <div class="team eq"><span class="nm">P = NP</span><span class="pts" id="ptsEq">0</span><span class="fd">first downs <b id="fdEq">0</b></span></div>
-      <div class="mid"><span class="clk" id="clk">loading</span><span class="per" id="per"></span><button class="play" id="play" type="button">Play</button></div>
-      <div class="team neq"><span class="nm">P ≠ NP</span><span class="pts" id="ptsNeq">0</span><span class="fd">first downs <b id="fdNeq">0</b></span></div>
-    </div>
-  </div>
   <div class="pop" id="pop" hidden></div>
 </div>
 
@@ -168,6 +168,7 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     ],
   };
   const GAPTXT = { gct: 'gap: algebraic, no direct path', proof_complexity: 'gap: needs every proof system', circuit_lower_bounds: 'gap: needs superpolynomial size' };
+  const GAPSHORT = { gct: 'gap: algebraic only', proof_complexity: 'gap: all proof systems', circuit_lower_bounds: 'gap: superpolynomial' };
   const $ = (s) => document.querySelector(s);
   const el = (tag, attrs = {}, ...kids) => { const n = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else n.setAttribute(k, v); } n.append(...kids.filter((k) => k != null)); return n; };
   const fmtPT = (ms, o) => new Intl.DateTimeFormat('en-US', { timeZone: TZ, ...o }).format(new Date(ms));
@@ -250,11 +251,11 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
 
   // ---- geometry: field coordinates u (along: -1 = P = NP goal line, +1 = P ≠ NP) and w (across, 0..1) ----
   function layout() {
-    const W = stage.clientWidth, portrait = W < 760;
-    const H = portrait ? Math.round(Math.min(860, Math.max(560, W * 1.85))) : Math.round(Math.max(480, Math.min(640, W * 0.56)));
+    const W = stage.clientWidth, portrait = false, small = W < 600;
+    const H = small ? Math.round(Math.max(380, Math.min(560, W * 1.2))) : Math.round(Math.max(480, Math.min(640, W * 0.56)));
     const dpr = window.devicePixelRatio || 1; canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); canvas.style.height = `${H}px`; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const st = portrait ? Math.max(20, W * 0.075) : Math.max(26, H * 0.09);   // the stands' depth
-    geo = { W, H, portrait, st };
+    geo = { W, H, portrait, small, st };
     if (portrait) { geo.x0 = st + 3; geo.x1 = W - st - 3; geo.cy = H / 2; geo.half = (H / 2 - 4) / (1 + Z); }
     else { geo.y0 = st + 3; geo.y1 = H - st - 3; geo.cx = W / 2; geo.half = (W / 2 - 4) / (1 + Z); }
     // the stands: neutral lemmas along both sidelines, and the snipers among them
@@ -331,12 +332,13 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     // truth-zone lettering
     const zl = (s, txt) => { const [x, y] = toXY(s * (1 + Z / 2), 0.5); ctx.save(); ctx.translate(x, y); if (!portrait) ctx.rotate(s * Math.PI / 2); ctx.fillStyle = c.zt; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `800 ${Math.round(geo.half * Z * (portrait ? 0.42 : 0.4))}px "Big Shoulders Display", "Arial Narrow", sans-serif`; ctx.fillText(txt, 0, 0); ctx.restore(); };
     zl(-1, 'P = NP'); zl(1, 'P ≠ NP');
-    const zlab = (s, txt, colr) => { const [x, y] = portrait ? toXY(s * (1 + Z) - s * 0.03, 0.5) : toXY(s * (1 + Z / 2), 0.035); label(txt, x, y, '600 10px "IBM Plex Mono", ui-monospace, monospace', colr, 'center', portrait ? (s < 0 ? 'top' : 'bottom') : 'top'); };
-    zlab(-1, 'TRUTH ZONE · PROVED', c.eq); zlab(1, 'TRUTH ZONE · PROVED', c.neq);
-    { const [x, y] = toXY(-0.55, 0.5); label('No checked evidence for P = NP', x, y, `700 ${portrait ? 15 : 18}px "Big Shoulders Display", "Arial Narrow", sans-serif`, c.muted); }
+    const zlab = (s, txt, colr) => { const [x, y] = portrait ? toXY(s * (1 + Z) - s * 0.03, 0.5) : toXY(s * (1 + Z / 2), 0.975); label(txt, x, y, `600 ${geo.small ? 8.5 : 10}px "IBM Plex Mono", ui-monospace, monospace`, colr, 'center', portrait ? (s < 0 ? 'top' : 'bottom') : 'bottom'); };
+    const zt = geo.small ? 'TRUTH ZONE' : 'TRUTH ZONE · PROVED'; zlab(-1, zt, c.eq); zlab(1, zt, c.neq);
+    { const [x, y] = toXY(-0.55, 0.5), f = `700 ${geo.small ? 13 : 18}px "Big Shoulders Display", "Arial Narrow", sans-serif`;
+      if (geo.small) { label('No checked', x, y - 8, f, c.muted); label('evidence for P = NP', x, y + 8, f, c.muted); } else label('No checked evidence for P = NP', x, y, f, c.muted); }
     // field-of-play scale: farther from midfield = likelier true
     for (const s of [-1, 1]) { const [x, y] = toXY(s * (portrait ? 0.9 : 0.6), portrait ? 0.02 : 0.975); label(s < 0 ? (portrait ? '↑ likelier true' : '← likelier true') : (portrait ? '↓ likelier true' : 'likelier true →'), x, y, '500 9.5px "IBM Plex Mono", ui-monospace, monospace', c.muted, portrait ? 'left' : 'center'); }
-    for (const s of [1]) for (const cl of cols[String(s)]) { const [x, y] = toXY(s * 0.975, portrait ? (cl.w0 + cl.w1) / 2 : cl.w0 + 0.012); label(cl.name, x, y, '600 10.5px "Inter", system-ui, sans-serif', c.muted, portrait ? 'center' : 'right', portrait ? 'bottom' : 'top'); }
+    for (const s of [1]) for (const cl of cols[String(s)]) { const [x, y] = toXY(s * 0.975, portrait ? (cl.w0 + cl.w1) / 2 : cl.w0 + 0.012); label(cl.name, x, y, `600 ${geo.small ? 9.5 : 10.5}px "Inter", system-ui, sans-serif`, c.muted, portrait ? 'center' : 'right', portrait ? 'bottom' : 'top'); }
     // links
     ctx.strokeStyle = c.edge; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); for (const [s, d] of planLinks) if (visible[s] && visible[d]) { ctx.moveTo(X[s], Y[s]); ctx.lineTo(X[d], Y[d]); } ctx.stroke(); ctx.setLineDash([]);
     ctx.lineWidth = 1.1; ctx.beginPath(); for (const [a, b] of D.edges) if (visible[a] && visible[b] && side[a] !== 0 && side[b] !== 0 && statusAt(a, T) !== 5) { ctx.moveTo(X[a], Y[a]); ctx.lineTo(X[b], Y[b]); } ctx.stroke();
@@ -354,8 +356,8 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
       const proves = id === 'p_eq_np_search', colr = side[i] < 0 ? c.eq : c.neq, chk = statusAt(i, T) === 0;
       ctx.strokeStyle = colr; ctx.globalAlpha = proves || chk ? 0.9 : 0.6; ctx.lineWidth = proves ? 1.8 : 1.2; ctx.setLineDash(proves ? [] : [5, 4]);
       ctx.beginPath(); ctx.moveTo(X[i], Y[i]); ctx.lineTo(bx, by); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
-      const mx = bx + (X[i] - bx) * 0.68, my = by + (Y[i] - by) * 0.68;
-      label(proves ? '≡ P = NP' : GAPTXT[id], mx, my, `600 ${portrait ? 9.5 : 10.5}px "Inter", system-ui, sans-serif`, colr, 'center');
+      const mx = proves ? X[i] : bx + (X[i] - bx) * 0.68, my = proves ? Y[i] + 13 : by + (Y[i] - by) * 0.68;
+      label(proves ? '≡ P = NP' : (geo.small ? GAPSHORT : GAPTXT)[id], mx, my, `600 ${geo.small ? 9 : 10.5}px "Inter", system-ui, sans-serif`, colr, 'center');
     }
     // the sides: biggest first so small ones stay visible
     const idx = []; for (let i = 0; i < N; i++) if (side[i] !== 0 && !sniper[i] && visible[i]) idx.push(i);
@@ -370,7 +372,7 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     // the ball on top
     ctx.save(); ctx.translate(bx, by); if (!portrait) ctx.rotate(0); else ctx.rotate(Math.PI / 2);
     ctx.fillStyle = c.ball; ctx.beginPath(); ctx.ellipse(0, 0, 17, 10.5, 0, 0, 7); ctx.fill(); ctx.strokeStyle = c.lace; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(7, 0); for (let k = -5; k <= 5; k += 2.5) { ctx.moveTo(k, -2.6); ctx.lineTo(k, 2.6); } ctx.stroke(); ctx.restore();
-    label('P ?= NP · the claim', bx, by + (portrait ? 26 : 20), '700 13px "Big Shoulders Display", "Arial Narrow", sans-serif', c.fg, 'center');
+    label(geo.small ? 'P ?= NP' : 'P ?= NP · the claim', bx, by + (portrait ? 26 : 19), '700 13px "Big Shoulders Display", "Arial Narrow", sans-serif', c.fg, 'center');
     for (const [i, w] of [[sel, 2], [hov, 1.5]]) { if (i < 0 || !visible[i] || X[i] == null) continue; ctx.beginPath(); ctx.arc(X[i], Y[i], (side[i] === 0 && !sniper[i] ? 2 : radius(i)) + 5, 0, 7); ctx.lineWidth = w; ctx.strokeStyle = c.fg; ctx.stroke(); }
   }
 
@@ -390,7 +392,8 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
       const box = $(fid); for (const co of COACHES[s]) { const b = el('button', { class: 'face', type: 'button', 'aria-label': `${co.name}: tap for quote` }, el('span', { text: co.ini })); b.addEventListener('click', (e) => showCoach(co, b)); b.addEventListener('mouseenter', () => showCoach(co, b)); b.addEventListener('mouseleave', () => { if (!pop.dataset.pinned) pop.hidden = true; }); box.append(b); }
       const ul = $(pid), list = D.players?.[s] || [];
       if (!list.length) ul.append(el('li', { class: 'none', text: 'No players yet.' }));
-      for (const p of list.slice(0, 4)) ul.append(el('li', {}, el('span', { class: 'who' }, p.name, el('small', { text: p.kind === 'fleet' ? 'fleet' : 'outside' })), el('span', { class: 'stat', text: s === '-1' ? `${n(p.checked)} · none for P = NP` : n(p.checked) })));
+      for (const p of list.slice(0, 4)) ul.append(el('li', {}, el('span', { class: 'who' }, p.name, el('small', { text: p.kind === 'fleet' ? 'fleet' : 'outside' })), el('span', { class: 'stat', text: n(p.checked) })));
+      if (s === '-1' && list.length) ul.append(el('li', { class: 'none', text: 'None of its checked lemmas pulls toward P = NP.' }));
     }
   }
   function showCoach(co, b) {
