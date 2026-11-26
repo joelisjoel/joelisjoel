@@ -43,4 +43,6 @@ mkdir -p out/field out/roots out/tug
 python3 -I "$HERE/build_viz_data.py" "$D" out/field/data.json
 python3 -I "$HERE/build_roots_data.py" "$D" out/roots/data.json | tail -1
 python3 -I "$HERE/build_tug_data.py" "$D" out/roots/data.json out/tug/data.json
-echo "data files in $D/out/{field,roots,tug}/data.json"
+mkdir -p out/game
+python3 -I "$HERE/build_game_data.py" "$D" out/tug/data.json out/game/data.json
+echo "data files in $D/out/{field,roots,tug,game}/data.json"

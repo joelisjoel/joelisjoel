@@ -42,6 +42,7 @@ Publish each page with its new `data.json` (Artifact tool, `url` set so the link
 | Tug of war | `pages/tug.html` | `$DATA/out/tug/data.json` | https://claude.ai/artifact/XUrA1GuKmCZyL3rzZNL8fm |
 | Roots | `pages/roots.html` | `$DATA/out/roots/data.json` | https://claude.ai/artifact/1fJUacy2TEVW8VFNK39Vh1 |
 | Field | `pages/field.html` | `$DATA/out/field/data.json` | https://claude.ai/artifact/MWgWvHaGkfp7HYa6zmKcJP |
+| Game (v3, phone first) | `pages/game.html` | `$DATA/out/game/data.json` | https://claude.ai/artifact/1RL4CUU5XgywQuixDDrMVn |
 
 ## 4. Script the clip
 
@@ -79,6 +80,7 @@ Commit `clip/versions/$DATE/`, `clip/out/pnp-$DATE.mp4` and the snapshot to this
 ## 7. Prepare the site (do not publish)
 
 In `joelisjoel.github.io`, on the branch:
+- refresh the live game: `python3 pipeline/site_game.py pages/game.html $DATA/out/game/data.json <site>/pnp`;
 - copy `clip/out/site/pnp-$DATE.mp4` to `videos/`;
 - in `_data/home.yml`, item `pequalsnp`: add the new clip at the top of `videos:` (keep the 7
   newest in the list), refresh `images/home/pequalsnp-clip-poster.jpg` from frame 0 (720x720),
