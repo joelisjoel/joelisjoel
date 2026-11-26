@@ -1,11 +1,11 @@
-<title>P vs NP Game</title>
+<title>P vs NP Tug of War</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
 <style>
-/* Layout: a night football field, phone first. Truth zones at each end, the grey field of play between,
-   the stands on the sidelines, the ball at midfield, and a TV-style scoreboard pinned to the bottom. */
+/* Layout: a tug of war, phone first. The claim is the knot in the middle; each side's ropes run back into its truth zone,
+   where proved lemmas anchor them; open lemmas wait in the grey area; neutral lemmas line the sidelines; the score sits under the field. */
 :root {
   color-scheme: dark;
   --bg: #090c0b; --fg: #eef1ef; --muted: #98a59e; --rule: #25302b; --card: #111815;
@@ -13,8 +13,8 @@
   --zone-eq: #0f2036; --zone-neq: #301317; --zone-text: rgba(238, 241, 239, 0.12);
   --edge: rgba(238, 241, 239, 0.32); --rope: #3c4a42;
   --eq: #4da3ff; --neq: #ff5f64; --neutral-laser: #d6ddd9;
+  --mk-manifold: #e8ece9; --mk-polymarket: #2dd4bf; --mk-kalshi: #a594f9;
   --cold: #6d6650; --warm: #b8963f; --hot: #ffd46e; --dead: #3a3e43; --dead-mark: #737880;
-  --ball: #9a5f2c; --ball-lace: #f4efe6;
   --f-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif;
   --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -80,7 +80,12 @@ canvas { display: block; width: 100%; touch-action: pan-y; cursor: crosshair; bo
 .mrow { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .mrow b { font: 800 26px/1 var(--f-display); color: var(--neq); font-variant-numeric: tabular-nums; }
 .mrow span { font: 500 11.5px/1.3 var(--f-mono); color: var(--muted); }
-#spark { width: 100%; height: 100px; display: block; touch-action: none; cursor: ew-resize; }
+#spark { width: 100%; height: 120px; display: block; touch-action: none; cursor: ew-resize; }
+.mleg { display: grid; gap: 4px; margin: 2px 0 0; padding: 0; list-style: none; }
+.mleg li { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: baseline; font-size: 12.5px; min-width: 0; }
+.mleg i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; transform: translateY(-3px); }
+.mleg .q { overflow-wrap: anywhere; } .mleg .q small { color: var(--muted); font: 400 11px/1.3 var(--f-mono); margin-left: 4px; }
+.mleg b { font: 700 15px/1 var(--f-display); font-variant-numeric: tabular-nums; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; }
@@ -100,19 +105,19 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
   <header>
     <p class="eyebrow" id="snap">pequalnp.com · public record</p>
     <h1><span class="eq">P = NP</span> vs <span class="neq">P ≠ NP</span></h1>
-    <p class="dek">An AI agent fleet is attacking P vs NP in public, and the Lean checker is the referee. Checked lemmas sit in their side's truth zone; open ones stand in the grey field, closer to the zone the likelier we guess they are true. Lasers are kills. Tap anything.</p>
+    <p class="dek">An AI agent fleet is attacking P vs NP in public, and the Lean checker is the referee. Each side pulls the claim, the knot in the middle, toward its truth zone. Proved lemmas anchor the ropes from the back: the more lemmas rest on one, the farther back it stands and the harder it pulls. Open lemmas wait in the grey area, nearer their zone the likelier we guess they are true. Lasers are kills. Tap anything.</p>
   </header>
 
   <div class="stage" id="stage">
-    <canvas id="field" role="img" aria-label="Football field of lemmas"></canvas>
+    <canvas id="field" role="img" aria-label="Tug of war of lemmas"></canvas>
     <div class="tip" id="tip" hidden></div>
   </div>
 
-  <section class="score" aria-label="Scoreboard: program targets proved, first downs, and each team's coaches">
+  <section class="score" aria-label="Score: program targets proved, chain steps checked, and each side's coaches">
     <div class="board">
-      <div class="team eq"><span class="nm">P = NP</span><span class="pts" id="ptsEq">0</span><span class="fd">first downs <b id="fdEq">0</b></span><div class="faces" id="coachesEq" aria-label="P = NP coaches"></div></div>
+      <div class="team eq"><span class="nm">P = NP</span><span class="pts" id="ptsEq">0</span><span class="fd">chain steps <b id="fdEq">0</b></span><div class="faces" id="coachesEq" aria-label="P = NP coaches"></div></div>
       <div class="mid"><span class="clk" id="clk">loading</span><span class="per" id="per"></span><button class="play" id="play" type="button">Play</button></div>
-      <div class="team neq"><span class="nm">P ≠ NP</span><span class="pts" id="ptsNeq">0</span><span class="fd">first downs <b id="fdNeq">0</b></span><div class="faces" id="coachesNeq" aria-label="P ≠ NP coaches"></div></div>
+      <div class="team neq"><span class="nm">P ≠ NP</span><span class="pts" id="ptsNeq">0</span><span class="fd">chain steps <b id="fdNeq">0</b></span><div class="faces" id="coachesNeq" aria-label="P ≠ NP coaches"></div></div>
     </div>
   </section>
 
@@ -122,9 +127,10 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
   </section>
 
   <section class="market" aria-label="Toy odds over time">
-    <div class="mrow"><span>Toy odds that P ≠ NP, from our weights · drag to move in time</span><b id="odds">50%</b></div>
+    <div class="mrow"><span>Odds on P vs NP over the record · drag to move in time</span><b id="odds">50%</b></div>
     <svg id="spark" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"></svg>
     <div class="mrow"><span id="sparkFrom">start</span><span>dashed: experts' poll, 2019 · bars: lemmas checked per hour</span><span>snapshot</span></div>
+    <ul class="mleg" id="mleg"></ul>
   </section>
 
   <div class="legend" id="legend"></div>
@@ -132,11 +138,12 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
   <section>
     <h2>How to read the game</h2>
     <dl class="read">
-      <div><dt>Truth zones</dt><dd>Each end zone holds the lemmas the Lean checker has proved on that side. Inside, every lemma stands in front of what it rests on, so foundations sit at the back.</dd></div>
-      <div><dt>Grey field</dt><dd>Open lemmas, placed by our guess at how likely each is true: farther toward its zone means likelier. The guess uses the plan (a planned chain step leans true), citations, failed attempts and corrections. It will be wrong sometimes; a lemma that gets checked runs into the zone.</dd></div>
-      <div><dt>The ball</dt><dd>The claim itself, at midfield. It moves into an end zone only on a proof. Lines run from each program's target to the ball: solid when the target would settle the claim, dashed with what is missing when it would not.</dd></div>
-      <div><dt>Score</dt><dd>Points are program targets proved: none yet. First downs are checked steps on a program's chain toward its target.</dd></div>
-      <div><dt>The stands</dt><dd>Meta-complexity and known results pull neither way, so they sit along the sidelines. So do the snipers: a kill is recorded by proving a lemma's exact opposite, and that twin fires the laser.</dd></div>
+      <div><dt>Pulling</dt><dd>Each side pulls the claim toward its truth zone. A proved lemma pulls through everything that rests on it, so foundations, the lemmas the most others rest on, stand at the back as anchors and pull hardest. Size shows how much rests on a lemma.</dd></div>
+      <div><dt>Truth zones</dt><dd>Each end holds the lemmas the Lean checker has proved on that side. Inside, every lemma stands in front of what it rests on.</dd></div>
+      <div><dt>Grey area</dt><dd>Open lemmas, not yet pulling, placed by our guess at how likely each is true: nearer its zone means likelier. The guess uses the plan (a planned chain step leans true), citations, failed attempts and corrections. It will be wrong sometimes; a lemma that gets proved runs into its zone and takes hold of the rope.</dd></div>
+      <div><dt>The knot</dt><dd>The claim itself, in the middle. It moves into a truth zone only on a proof. Lines run from each program's target to the knot: solid when the target would settle the claim, dashed with what is missing when it would not.</dd></div>
+      <div><dt>Score</dt><dd>The big number is program targets proved: none yet. Chain steps are proved steps on a program's chain toward its target.</dd></div>
+      <div><dt>Sidelines</dt><dd>Meta-complexity and known results pull neither way, so they line the sides. So do the snipers: a kill is recorded by proving a lemma's exact opposite, and that twin fires the laser.</dd></div>
       <div><dt>Coaches and players</dt><dd>Coaches sit with their team's score: well-known experts on record in each camp; tap a face for the quote and its source. Players are the most active on each side: the fleet's orchestrators and outside contributors, with the record's counts.</dd></div>
     </dl>
   </section>
@@ -201,7 +208,7 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
       else if (algChain.has(id)) { side[i] = 1; attackChain[i] = true; }
     }
     for (const [v, a] of data.attacks) { killedBy[v] = a; attacks.push({ v, a, t: rows[v][3] }); if (a >= 0) { attacker[a] = true; snipes[a].push(v); if (side[v] !== 0 && side[a] === side[v]) sniper[a] = true; } }
-    // plan links and chain steps (first downs)
+    // plan links, and the chain steps the score counts
     const planList = (p) => [...p.chain.filter(Boolean), p.hard, p.target].filter((id, k, a) => id && a.indexOf(id) === k && byId.has(id)).map((id) => byId.get(id));
     for (const id of ['gct', 'proof_complexity', 'circuit_lower_bounds']) {
       const L = planList(P[pk[id]]).filter((i) => !dead(rows[i][2]) && !attackChain[i] && side[i] === 1);
@@ -300,7 +307,7 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
 
   // ---- drawing ----
   function tokens() { const cs = getComputedStyle(document.documentElement), g = (k) => cs.getPropertyValue(k).trim(), hex = (h) => [0, 2, 4].map((k) => parseInt(h.replace('#', '').slice(k, k + 2), 16));
-    return { field: g('--field'), stands: g('--stands'), line: g('--line'), goal: g('--goal'), zeq: g('--zone-eq'), zneq: g('--zone-neq'), zt: g('--zone-text'), edge: g('--edge'), eq: g('--eq'), neq: g('--neq'), nl: g('--neutral-laser'), fg: g('--fg'), muted: g('--muted'), card: g('--card'), deadC: g('--dead'), deadM: g('--dead-mark'), ball: g('--ball'), lace: g('--ball-lace'), heat: [hex(g('--cold')), hex(g('--warm')), hex(g('--hot'))] }; }
+    return { field: g('--field'), stands: g('--stands'), line: g('--line'), goal: g('--goal'), zeq: g('--zone-eq'), zneq: g('--zone-neq'), zt: g('--zone-text'), edge: g('--edge'), rope: g('--rope'), eq: g('--eq'), neq: g('--neq'), nl: g('--neutral-laser'), fg: g('--fg'), muted: g('--muted'), card: g('--card'), deadC: g('--dead'), deadM: g('--dead-mark'), heat: [hex(g('--cold')), hex(g('--warm')), hex(g('--hot'))] }; }
   const label = (txt, x, y, font, color, align = 'center', base = 'middle') => { ctx.font = font; ctx.textAlign = align; ctx.textBaseline = base; ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = colors.field; ctx.strokeText(txt, x, y); ctx.fillStyle = color; ctx.fillText(txt, x, y); };
   function rectUW(u0, u1, w0, w1, fill) { const [a, b] = toXY(u0, w0), [c, d] = toXY(u1, w1); ctx.fillStyle = fill; ctx.fillRect(Math.min(a, c), Math.min(b, d), Math.abs(c - a), Math.abs(d - b)); }
   function lineUW(u0, w0, u1, w1) { const [a, b] = toXY(u0, w0), [c, d] = toXY(u1, w1); ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke(); }
@@ -339,6 +346,10 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     // field-of-play scale: farther from midfield = likelier true
     for (const s of [-1, 1]) { const [x, y] = toXY(s * (portrait ? 0.9 : 0.6), portrait ? 0.02 : 0.975); label(s < 0 ? (portrait ? '↑ likelier true' : '← likelier true') : (portrait ? '↓ likelier true' : 'likelier true →'), x, y, '500 9.5px "IBM Plex Mono", ui-monospace, monospace', c.muted, portrait ? 'left' : 'center'); }
     for (const s of [1]) for (const cl of cols[String(s)]) { const [x, y] = toXY(s * 0.975, portrait ? (cl.w0 + cl.w1) / 2 : cl.w0 + 0.012); label(cl.name, x, y, `600 ${geo.small ? 9.5 : 10.5}px "Inter", system-ui, sans-serif`, c.muted, portrait ? 'center' : 'right', portrait ? 'bottom' : 'top'); }
+    // the ropes: one per row on each side, from the knot back to the far end of its truth zone, where the anchors stand
+    { const [kx, ky] = toXY(ballU, 0.5); ctx.strokeStyle = c.rope; ctx.lineWidth = geo.small ? 2 : 2.6; ctx.setLineDash([8, 3]);
+      for (const s of [-1, 1]) for (const cl of cols[String(s)]) { const wm = (cl.w0 + cl.w1) / 2, [ax, ay] = toXY(s * 0.06, wm), [ex, ey] = toXY(s * (1 + Z * 0.97), wm); ctx.beginPath(); ctx.moveTo(kx, ky); ctx.lineTo(ax, ay); ctx.lineTo(ex, ey); ctx.stroke(); }
+      ctx.setLineDash([]); }
     // links
     ctx.strokeStyle = c.edge; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.beginPath(); for (const [s, d] of planLinks) if (visible[s] && visible[d]) { ctx.moveTo(X[s], Y[s]); ctx.lineTo(X[d], Y[d]); } ctx.stroke(); ctx.setLineDash([]);
     ctx.lineWidth = 1.1; ctx.beginPath(); for (const [a, b] of D.edges) if (visible[a] && visible[b] && side[a] !== 0 && side[b] !== 0 && statusAt(a, T) !== 5) { ctx.moveTo(X[a], Y[a]); ctx.lineTo(X[b], Y[b]); } ctx.stroke();
@@ -349,7 +360,7 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     }
     ctx.globalAlpha = 1;
     for (let i = 0; i < N; i++) if (sniper[i] && visible[i]) { const x = X[i], y = Y[i], r = 4; ctx.fillStyle = heatColor(heat(i)); ctx.beginPath(); if (portrait) { const d = x < W / 2 ? 1 : -1; ctx.moveTo(x - d * r, y - r); ctx.lineTo(x + d * r, y); ctx.lineTo(x - d * r, y + r); } else { const d = y < H / 2 ? 1 : -1; ctx.moveTo(x - r, y - d * r); ctx.lineTo(x, y + d * r); ctx.lineTo(x + r, y - d * r); } ctx.closePath(); ctx.fill(); }
-    // the ball, and the lines from each program's target
+    // the knot, and the lines from each program's target
     const [bx, by] = toXY(ballU, 0.5);
     for (const id of ['p_eq_np_search', 'gct', 'proof_complexity', 'circuit_lower_bounds']) {
       const p = P[pk[id]], i = byId.get(p.target); if (i == null || !visible[i]) continue;
@@ -369,10 +380,11 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
       if (side[at.v] === 0) { ctx.globalAlpha = 0.6 * k; ctx.strokeStyle = c.nl; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(X[at.v], Y[at.v], 2 + 5 * (1 - k), 0, 7); ctx.stroke(); ctx.globalAlpha = 1; continue; }
       const [sx, sy] = src(at); laser(sx, sy, X[at.v], Y[at.v], side[at.v] > 0 ? c.eq : c.neq, k, false);
     }
-    // the ball on top
-    ctx.save(); ctx.translate(bx, by); if (!portrait) ctx.rotate(0); else ctx.rotate(Math.PI / 2);
-    ctx.fillStyle = c.ball; ctx.beginPath(); ctx.ellipse(0, 0, 17, 10.5, 0, 0, 7); ctx.fill(); ctx.strokeStyle = c.lace; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(7, 0); for (let k = -5; k <= 5; k += 2.5) { ctx.moveTo(k, -2.6); ctx.lineTo(k, 2.6); } ctx.stroke(); ctx.restore();
-    label(geo.small ? 'P ?= NP' : 'P ?= NP · the claim', bx, by + (portrait ? 26 : 19), '700 13px "Big Shoulders Display", "Arial Narrow", sans-serif', c.fg, 'center');
+    // the knot: the claim, tied into every rope
+    ctx.font = '800 15px "Big Shoulders Display", "Arial Narrow", sans-serif'; const kw = ctx.measureText('P ?= NP').width + 18;
+    ctx.fillStyle = c.card; ctx.strokeStyle = c.fg; ctx.lineWidth = 1.6; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(bx - kw / 2, by - 12, kw, 24, 12); else ctx.rect(bx - kw / 2, by - 12, kw, 24); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = c.fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('P ?= NP', bx, by + 1);
+    if (!geo.small) label('the claim', bx, by + 23, '600 11px "Inter", system-ui, sans-serif', c.muted, 'center');
     for (const [i, w] of [[sel, 2], [hov, 1.5]]) { if (i < 0 || !visible[i] || X[i] == null) continue; ctx.beginPath(); ctx.arc(X[i], Y[i], (side[i] === 0 && !sniper[i] ? 2 : radius(i)) + 5, 0, 7); ctx.lineWidth = w; ctx.strokeStyle = c.fg; ctx.stroke(); }
   }
 
@@ -385,7 +397,7 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     $('#clk').textContent = fmtPT(t0 + T * 60000, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
     $('#per').textContent = T >= maxMin ? `hour ${Math.round(maxMin / 60)} · now` : `hour ${Math.floor(T / 60)} of ${Math.round(maxMin / 60)}`;
     market();
-    canvas.setAttribute('aria-label', `Football field of lemmas at hour ${Math.floor(T / 60)}. Score: P = NP ${td['-1']}, P ≠ NP ${td['1']} (program targets proved). First downs ${fd['-1']} to ${fd['1']}.`);
+    canvas.setAttribute('aria-label', `Tug of war of lemmas at hour ${Math.floor(T / 60)}. Score: P = NP ${td['-1']}, P ≠ NP ${td['1']} (program targets proved). Chain steps checked ${fd['-1']} to ${fd['1']}.`);
   }
   function benches() {
     for (const [s, fid, pid] of [['-1', '#coachesEq', '#playersEq'], ['1', '#coachesNeq', '#playersNeq']]) {
@@ -415,6 +427,11 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
       if (w) ev.push([r[3], w]); }
     ev.sort((a, b) => a[0] - b[0]); let s = 0; cum = ev.map((e) => (s += e[1]));
     $('#sparkFrom').textContent = fmtPT(t0, { month: 'short', day: 'numeric' });
+    const ml = $('#mleg');
+    ml.append(el('li', {}, el('i', { style: 'background:var(--neq)' }), el('span', { class: 'q' }, 'Ours: toy odds that P ≠ NP', el('small', { text: 'invented weights' })), el('b', { id: 'oddsLeg', text: '' })));
+    for (const m of D.markets?.series || []) ml.append(el('li', { 'data-m': m.id }, el('i', { style: `background:var(--mk-${m.id})` }),
+      el('span', { class: 'q' }, el('a', { href: m.url, target: '_blank', rel: 'noopener noreferrer', text: `${m.source}: “${m.question}”` }), el('small', { text: `${m.kind === 'truth' ? 'whether it is true' : 'whether it gets settled'} · ${m.money}` })), el('b', { text: '' })));
+    if (D.markets) ml.append(el('li', {}, el('span', {}), el('span', { class: 'q' }, el('small', { text: `Market prices as of ${whenPT(Date.parse(D.markets.asof))} PT; they move, and are not forecasts we vouch for.` })), el('span', {})));
     const sp = $('#spark'), seek = (e) => { const r = sp.getBoundingClientRect(); T = Math.max(0, Math.min(maxMin, ((e.clientX - r.left) / r.width) * maxMin)); if (playing) pause(); update(true); draw(); scoreboard(); };
     sp.addEventListener('pointerdown', (e) => { sp.setPointerCapture(e.pointerId); seek(e); }); sp.addEventListener('pointermove', (e) => { if (e.buttons) seek(e); });
   }
@@ -432,8 +449,18 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     sp.append(mk('line', { x1: 0, x2: 1000, y1: 50, y2: 50, stroke: 'var(--rule)', 'vector-effect': 'non-scaling-stroke' }));
     let d = ''; for (let k = 0; k <= 200; k++) { const t = (k / 200) * maxMin; d += `${k ? 'L' : 'M'}${k * 5},${y(odds(t)).toFixed(2)}`; }
     sp.append(mk('path', { d, fill: 'none', stroke: 'var(--neq)', 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' }));
+    for (const m of D.markets?.series || []) {
+      if (!m.points.length) continue; let dm = '';
+      m.points.forEach(([t, p], k) => { const xx = (Math.min(t, maxMin) / maxMin) * 1000; dm += k ? `H${xx.toFixed(1)}V${y(p).toFixed(2)}` : `M${xx.toFixed(1)},${y(p).toFixed(2)}`; });
+      dm += `H${((Math.min(maxMin, m.points.at(-1)[0] > maxMin ? maxMin : maxMin) / maxMin) * 1000).toFixed(1)}`;
+      sp.append(mk('path', { d: dm, fill: 'none', stroke: `var(--mk-${m.id})`, 'stroke-width': 1.6, opacity: 0.95, 'vector-effect': 'non-scaling-stroke' }));
+    }
     const x = (T / maxMin) * 1000; sp.append(mk('line', { x1: x, x2: x, y1: 0, y2: 100, stroke: 'var(--fg)', 'vector-effect': 'non-scaling-stroke' }));
-    $('#odds').textContent = `${(odds(T) * 100).toFixed(0)}%`;
+    $('#odds').textContent = `${(odds(T) * 100).toFixed(0)}%`; if ($('#oddsLeg')) $('#oddsLeg').textContent = `${(odds(T) * 100).toFixed(0)}%`;
+    for (const li of document.querySelectorAll('#mleg li[data-m]')) {
+      const m = (D.markets?.series || []).find((x) => x.id === li.dataset.m), pts = m.points.filter((q) => q[0] <= T), v = (pts.at(-1) || m.points[0])?.[1];
+      li.querySelector('b').textContent = v == null ? '–' : `${Math.round(v * 100)}%`;
+    }
   }
 
   // ---- playback ----

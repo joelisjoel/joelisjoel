@@ -36,5 +36,7 @@ d['players'] = players
 d['poll'] = {'source': 'William Gasarch, "The Third P =? NP Poll", SIGACT News 50(1), March 2019',
              'url': 'https://www.cs.umd.edu/users/gasarch/papers/poll3.pdf', 'respondents': 124,
              'neq': 109, 'eq': 15, 'experts_neq_pct': 99, 'masses_neq_pct': 87}
+mp = os.path.join(D, 'markets.json')
+if os.path.exists(mp): d['markets'] = json.load(open(mp))   # from fetch_markets.py
 json.dump(d, open(OUT, 'w'), separators=(',', ':'), ensure_ascii=False)
 print('players', json.dumps(players)[:600]); print('bytes', os.path.getsize(OUT))

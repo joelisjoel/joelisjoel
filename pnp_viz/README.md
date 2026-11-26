@@ -24,9 +24,10 @@ or affiliated with pequalnp.com.
   behind, every lemma in front of what it rests on; color is activity; kills are lasers fired by
   each refuted lemma's negation twin; the claim is the knot at midfield.
 
-- `game.html`: v3, the game, phone first. Truth zones hold each side's checked lemmas; open lemmas stand in the
-  grey field by our guess at how likely each is true; the claim is the ball; a scoreboard (targets proved,
-  first downs), coaches with sourced quotes, the most active players, and toy odds over time. Also served at
+- `game.html`: v3, the tug of war, phone first. Proved lemmas anchor each side's ropes from its truth zone, the
+  more resting on one the harder it pulls; open lemmas wait in the grey area by our guess at how likely each is
+  true; the claim is the knot; a score (targets proved, chain steps), coaches with sourced quotes, the most active
+  players, and a timeline of our toy odds beside the Manifold, Polymarket and Kalshi markets. Also served at
   joelisjoel.org/pnp/ (`pipeline/site_game.py` makes that copy).
 
 They were written as Claude artifacts, which wrap each file in a standard HTML document. To host
