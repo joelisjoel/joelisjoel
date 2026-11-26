@@ -1,7 +1,11 @@
-frames/
-audio/
-data.json
-clip.html
+# working files at this folder's root (each version keeps its own copies under versions/)
+/frames/
+/audio/
+/data.json
+/clip.html
+/clip.json
+/narration.json
+/timing.json
+/out/site/
 node_modules/
 *.png
-clip.json

@@ -9,7 +9,9 @@ or affiliated with pequalnp.com.
 |---|---|
 | `pages/` | Three interactive pages, each reading a `data.json` beside it |
 | `pipeline/` | Refreshes the record and builds each page's `data.json` |
-| `clip/` | A 1080x1080 video clip of the tug of war for X, with a daily voiceover update |
+| `clip/` | Daily 1080x1080 video clips of the tug of war for X, with voiceover; one folder per version |
+| `snapshots/` | The record's `head.json` from every data run (counts, for "what changed") |
+| `RUNBOOK.md` | The daily update, step by step |
 
 ## The pages
 
@@ -43,6 +45,6 @@ What the data does and doesn't say:
 
 ## The clip
 
-See `clip/README.md`. The Nov 25 clip (`clip/out/pnp-tug-of-war.mp4`) was the first post; the
-Nov 26 update with voiceover (`clip/out/pnp-tug-of-war-update-nov26.mp4`) is also on
-joelisjoel.org/projects.
+See `clip/README.md` and `RUNBOOK.md`. Clips are named by date: `clip/out/pnp-2026-11-25.mp4`
+was the first post (music only), `clip/out/pnp-2026-11-26.mp4` the first daily update with
+voiceover, also on joelisjoel.org/projects.

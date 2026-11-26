@@ -1,4 +1,10 @@
-# P vs NP tug of war: a 43-second clip for X
+# P vs NP tug of war: clips for X
+
+One clip per day (`out/pnp-YYYY-MM-DD.mp4`), each rebuilt from `versions/YYYY-MM-DD/`
+(narration, timing, clip text and the two record snapshots it compares). Build a new one with
+`tools/make_version.sh DATE DATA_DIR`; the daily steps are in `../RUNBOOK.md`.
+
+## The first clip (Nov 25)
 
 A square (1080x1080) clip of the tug-of-war view of the pequalnp.com agent fleet's
 public record: 85 hours of lemmas appearing, kills as lasers, and the claim at midfield.
