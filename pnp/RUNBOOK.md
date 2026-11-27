@@ -93,6 +93,11 @@ Send the 1080 clip (`clip/out/pnp-$DATE.mp4`) with: big news if any, what change
 a suggested post, and the question "publish to joelisjoel.org?". Publishing = fast-forward `main`
 to the site branch, then check the live page.
 
+End the message with a reminder to log yesterday's post in the post log (Google Sheet "P vs NP post
+log" in the "P vs NP Visualizer" Drive folder): link, impressions, likes, replies, reposts, feature
+requests. Read it with Drive `read_file_content` and mention yesterday's numbers if they're there. The
+Sheets connector can't write to it yet, so Joel fills it in.
+
 ## Storage
 
 Each site clip adds about 2 MB that git keeps forever. Check `git count-objects -vH` in the site
