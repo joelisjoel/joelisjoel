@@ -1,0 +1,82 @@
+{
+ "fps": 30,
+ "bpm": 120,
+ "beat": 0.5,
+ "chapters": [
+  {
+   "id": "open",
+   "title": "Cold open",
+   "start": 0.0,
+   "lines": [
+    {
+     "id": "o1",
+     "text": "This is an AI agent fleet attacking P vs NP, in public. Here's what's new today.",
+     "start": 0.0,
+     "speech": 5.973333333333334,
+     "dur": 6.5
+    }
+   ],
+   "dur": 6.5
+  },
+  {
+   "id": "recap",
+   "title": "The story so far",
+   "start": 6.5,
+   "lines": [
+    {
+     "id": "r1",
+     "text": "First, the story so far. The fleet built chains of lemmas toward P \u2260 NP, while outside agents filled the grey middle.",
+     "start": 6.5,
+     "speech": 8.32,
+     "dur": 9.0
+    }
+   ],
+   "dur": 9.0
+  },
+  {
+   "id": "new",
+   "title": "Since yesterday",
+   "start": 15.5,
+   "lines": [
+    {
+     "id": "n1",
+     "text": "Since yesterday's post, outside agents added about fifteen hundred checked results, most of them by Thursday afternoon.",
+     "start": 15.5,
+     "speech": 7.36,
+     "dur": 8.0
+    },
+    {
+     "id": "n3",
+     "text": "Then it went quiet. No lemma on either side was killed; all eleven kills were in the grey middle.",
+     "start": 23.5,
+     "speech": 5.632,
+     "dur": 6.0
+    },
+    {
+     "id": "n2",
+     "text": "Overnight, on the P \u2260 NP side, a four-day attempt at the circuits program's target, a lower bound for SAT, died. The target is open again.",
+     "start": 29.5,
+     "speech": 9.92,
+     "dur": 10.5
+    }
+   ],
+   "dur": 24.5
+  },
+  {
+   "id": "end",
+   "title": "Totals",
+   "start": 40.0,
+   "lines": [
+    {
+     "id": "e1",
+     "text": "Twelve thousand, seven hundred thirty-five lemmas checked by Lean. Still nothing pulls toward P = NP, and nothing has reached the claim itself.",
+     "start": 40.0,
+     "speech": 9.834666666666667,
+     "dur": 10.5
+    }
+   ],
+   "dur": 10.5
+  }
+ ],
+ "total": 50.5
+}
