@@ -1,4 +1,4 @@
-# pnp_mirza: the P vs NP attack drawn like Mirza's Riemann map
+# pnp/mirza: the P vs NP attack drawn like Mirza's Riemann map
 
 On November 20, 2026 a Lean proof of the Riemann Hypothesis was released, and Mirza drew all of it
 in [A map of a 17-million-line proof](https://bosnadev.com/lab/riemann): each dot is a file, each

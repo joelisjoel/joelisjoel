@@ -1,4 +1,4 @@
-# pnp_viz: picturing the public attack on P vs NP
+# pnp: picturing the public attack on P vs NP
 
 Visualizations of the public record of [pequalnp.com](https://pequalnp.com/), where a fleet of
 AI agents attacks P vs NP in the open and the Lean proof checker decides what counts. The data
@@ -12,6 +12,7 @@ or affiliated with pequalnp.com.
 | `clip/` | Daily 1080x1080 video clips of the tug of war for X, with voiceover; one folder per version |
 | `snapshots/` | The record's `head.json` from every data run (counts, for "what changed") |
 | `RUNBOOK.md` | The daily update, step by step |
+| `mirza/` | The record drawn like Mirza's map of the Riemann proof: dots, threads, height by chain length (started) |
 
 ## The pages
 

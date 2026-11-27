@@ -3,7 +3,7 @@
 
 Usage: graph_stats.py <data dir> [--json out.json]
 
-<data dir> is the pnp_viz data dir (pnp_viz/pipeline/update.sh fills it): it reads prog/*.json and
+<data dir> is the pnp data dir (pnp/pipeline/update.sh fills it): it reads prog/*.json and
 plan.json. A lemma's links are its depends_on list in the record; the Lean files may import more.
 """
 import glob
