@@ -8,6 +8,29 @@ so the two can be seen side by side: a finished proof, and an attempt.
 
 The layout ideas are Mirza's and are credited on the page; the code and the data are ours.
 
+**First demo:** [P vs NP, drawn like the Riemann map](https://claude.ai/artifact/Y8bVsgN74UobuN56U1SEgt) (a private
+Claude artifact; snapshot of November 26, 2026, 19:09 UTC).
+
+## Files
+
+| File | What |
+|---|---|
+| `page.html` | The page: the two towers to one scale (203 levels against 3), the comparison table, and the Spire view of the record (claim, target rings, levels, the floor by program), with select-to-light. Artifact-wrapped like `pnp/pages/*.html` (no doctype); reads `data.json` beside it. 2D canvas, no external scripts or fonts |
+| `tools/graph_stats.py` | Loads the record as a graph and measures it (`load`, `levels`, `measure`); every number on the page comes from here |
+| `tools/build_mirza_data.py` | Packs the record into the page's `data.json` (about 1.4 MB): per lemma the program, number, status, level and a short title where the cache has one, plus the 163 links, the targets and `graph_stats.py`'s counts. Stops if its arrays disagree with `graph_stats.py` |
+
+## Rebuild
+
+```bash
+python3 -I pnp/mirza/tools/graph_stats.py <data dir>                     # the numbers
+python3 -I pnp/mirza/tools/build_mirza_data.py <data dir> /tmp/mirza/data.json
+```
+
+`<data dir>` is the one `pnp/pipeline/update.sh` fills. Then publish `page.html` with `data.json` beside it (for the
+artifact, the Artifact tool's `files` maps `data.json` to the built file); `data.json` is generated, so it isn't
+committed. To host it elsewhere, add `<!doctype html>`, a charset and viewport meta. The page loads only its own two
+files, so it fits joelisjoel.org's Content-Security-Policy.
+
 ## Can we use Mirza's code?
 
 No, we rebuild it.
@@ -41,7 +64,7 @@ Links here are each lemma's `depends_on` list in the record; the Lean files may 
 would need the proofs repository to check. Of the six program targets, only geometric complexity
 theory's rests on anything (3 lemmas).
 
-## Plan
+## Plan (steps 1 to 3 and 5 are in the first demo)
 
 1. **Spire first.** Height is a lemma's level above the basics (the longest chain beneath it). Unlike
    depth below a theorem, it never changes once a lemma is checked, so the picture stays put as the

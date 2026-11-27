@@ -1,0 +1,606 @@
+<title>P vs NP, drawn like the Riemann map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="The public record of pequalnp.com drawn the way Mirza drew the Lean proof of the Riemann Hypothesis: dots are lemmas, threads mean relies on, height is chain length.">
+<style>
+/* Layout: one dark sheet, phone first. The to-scale towers (203 levels against 3) lead; then the record itself:
+   the claim at the top, program targets as faint rings, an empty gap, a few low levels, and the floor of lemmas by program. */
+:root {
+  color-scheme: dark;
+  --bg: #0a0e11; --panel: #10161a; --rule: #1e282e; --fg: #e6ebe9; --muted: #93a19f; --faint: #5b696e;
+  --checked: #2aac8b; --open: #c28e1e; --work: #a47fe8; --refuted: #5c464d; --retired: #3b4449; --blocked: #6b6276;
+  --below: #f4f6f5; --above: #7fd0ff; --ghost: #c9d3d0; --tower: #d6dfdb;
+  --f-display: "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Helvetica Neue", system-ui, sans-serif;
+  --f-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --f-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.5 var(--f-body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 34px; }
+a { color: inherit; text-underline-offset: 2px; }
+a:hover { color: var(--above); }
+button { font: inherit; color: inherit; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.eyebrow { font: 500 11.5px/1.35 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font: 700 clamp(34px, 8.6vw, 60px)/0.98 var(--f-display); letter-spacing: 0.005em; margin: 8px 0 0; text-wrap: balance; }
+h2 { font: 700 clamp(24px, 5.6vw, 32px)/1.05 var(--f-display); letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+h3 { font: 600 12px/1.3 var(--f-mono); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+p { margin: 0; }
+.dek { margin-top: 12px; max-width: 64ch; color: var(--fg); }
+.dek + .dek { margin-top: 8px; color: var(--muted); font-size: 14px; }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+section { display: grid; gap: 14px; min-width: 0; }
+.cap { color: var(--muted); font-size: 13.5px; max-width: 62ch; }
+canvas { display: block; width: 100%; }
+
+/* the towers and the table */
+.compare { grid-template-columns: minmax(0, 1fr); align-items: start; }
+.compare .fig { display: grid; gap: 10px; min-width: 0; }
+.tbl-wrap { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 8px 7px 0; border-bottom: 1px solid var(--rule); }
+thead th { font: 600 11px/1.3 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+tbody th { font-weight: 500; color: var(--muted); width: 30%; }
+td { font-variant-numeric: tabular-nums; }
+td:last-child { padding-right: 0; }
+
+/* the spire */
+.bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.bar .lbl { font: 500 11px/1 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.chip { border: 1px solid var(--rule); background: var(--panel); border-radius: 999px; padding: 5px 11px; font-size: 13px; line-height: 1.2; cursor: pointer; }
+.chip:hover { border-color: var(--faint); }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.stage { position: relative; min-width: 0; }
+#spire { touch-action: pan-y; cursor: crosshair; }
+.tip { position: absolute; z-index: 3; pointer-events: none; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 5px 8px; font: 12px/1.35 var(--f-mono); white-space: nowrap; }
+.below-stage { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); align-content: start; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.sw { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.sw.ring { background: none; border: 1.5px dashed var(--ghost); width: 11px; height: 11px; }
+.sw.line { width: 16px; height: 0; border-radius: 0; border-top: 1.5px solid var(--muted); }
+.sw.line.b { border-color: var(--below); } .sw.line.a { border-color: var(--above); }
+
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; min-width: 0; }
+.card .top { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font: 500 13px/1.3 var(--f-mono); }
+.pill { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--f-mono); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 9px; }
+.card .ttl { font-size: 15.5px; line-height: 1.4; overflow-wrap: anywhere; }
+.card .ttl.none { color: var(--muted); font-style: italic; font-size: 14px; }
+.card .sub { color: var(--muted); font-size: 13px; }
+.card dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; font-size: 13.5px; }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; min-width: 0; }
+.idb { font: 500 12px/1 var(--f-mono); border: 1px solid var(--rule); border-radius: 5px; padding: 4px 6px; background: var(--bg); cursor: pointer; display: inline-flex; gap: 5px; align-items: center; }
+.idb:hover { border-color: var(--faint); }
+.card .more { color: var(--muted); font-size: 12.5px; }
+.card .out { font-size: 13px; }
+
+.notes { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; max-width: 64ch; }
+.notes li { padding-left: 2px; }
+.notes li::marker { color: var(--faint); }
+footer { border-top: 1px solid var(--rule); padding-top: 16px; color: var(--muted); font-size: 13px; display: grid; gap: 6px; max-width: 78ch; }
+.err { color: var(--open); }
+
+@media (min-width: 900px) {
+  .compare { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 20px 40px; }
+  .compare > header { grid-column: 1 / -1; }
+  .below-stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: start; }
+  .notes { grid-template-columns: 1fr 1fr; gap: 40px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">pequalnp.com public record · snapshot <span id="snap">…</span></p>
+    <h1>P vs NP, drawn like the Riemann map</h1>
+    <p class="dek">On November 20, 2026 a Lean proof of the Riemann Hypothesis came out, and Mirza drew all of it: each file a dot, each import a thread, the theorem at the top. This is the same kind of drawing of <a href="https://pequalnp.com/" target="_blank" rel="noopener">pequalnp.com</a>, where a fleet of AI agents attacks P vs NP in the open and the Lean checker decides what counts.</p>
+    <p class="dek">A finished proof, and an attempt in progress.</p>
+  </header>
+
+  <section class="compare" aria-labelledby="h-scale">
+    <header>
+      <h2 id="h-scale"><span data-k="r_chain">203</span> levels against <span data-k="chain">3</span></h2>
+    </header>
+    <div class="fig">
+      <canvas id="towers" role="img" aria-label="Two towers drawn to one scale."></canvas>
+      <p class="cap">Height is the longest chain of reliance: a piece rests on one below it, which rests on another, down to the basics. Both towers use one scale.</p>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th scope="col"></th><th scope="col">Riemann proof</th><th scope="col">pequalnp record</th></tr></thead>
+        <tbody id="tbl"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-spire">
+    <header style="display:grid;gap:8px">
+      <h2 id="h-spire">The record, level by level</h2>
+      <p class="cap" id="spire-dek">Every lemma is a dot. Lemmas that rest on nothing form the floor, grouped by program. A lemma stands one level up for each link in the longest chain beneath it. Rings are the programs' targets, and the claim is at the top. Tap a dot.</p>
+    </header>
+    <div class="bar" role="group" aria-label="Programs to show" id="views"><span class="lbl">Show</span></div>
+    <div class="stage" id="stage">
+      <canvas id="spire" role="img" aria-label="The record as dots and threads."></canvas>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+    <div class="below-stage">
+      <div style="display:grid;gap:12px;align-content:start">
+        <div class="legend" id="legend"></div>
+        <div class="bar" id="jumps"><span class="lbl">Go to</span></div>
+      </div>
+      <div class="card" id="card" aria-live="polite"><p class="sub">Loading the record…</p></div>
+    </div>
+  </section>
+
+  <section class="notes" aria-label="Notes">
+    <div>
+      <h3>How to read it</h3>
+      <ul>
+        <li>Each dot is one lemma in the record. Color is its status: <b style="color:var(--checked)">checked</b> by the Lean checker, <b style="color:var(--open)">open</b>, <b style="color:var(--work)">in work</b>, or dim for refuted and retired.</li>
+        <li>A thread means “this lemma relies on that one”: it is in the lemma's list of what it depends on. There are <span data-k="links">163</span>.</li>
+        <li>Height is exact. A lemma sits as many levels up as the longest chain of threads beneath it. The floor is level 0: <span data-k="lv0">…</span> of the <span data-k="lemmas">…</span> lemmas.</li>
+        <li>The floor is laid out by program: the P = NP search on the left, the neutral library and meta-complexity in the middle, the programs aiming at P ≠ NP on the right. Inside each area, checked lemmas lie at the back and refuted ones at the front.</li>
+        <li>Rings are each program's target, drawn above the record with a dashed line down to where that lemma sits today. The claim, P ?= NP, is at the top. No thread reaches either.</li>
+        <li>Select a dot to light what it rests on (white) and what rests on it (blue).</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What not to read into it</h3>
+      <ul>
+        <li>Threads are the record's own depends-on lists. The Lean files may import more, which only the proofs repository could show. Cook-Levin (<span class="num">L-lib-031</span>) rests on nothing here.</li>
+        <li>Counts are not odds. <span data-k="checked">…</span> checked lemmas do not make either answer more likely. Meta-complexity holds <span data-k="meta">…</span> of the <span data-k="lemmas">…</span> lemmas, many of them circuit sizes for single small graphs.</li>
+        <li>The empty space has no size. No one knows how tall a proof of P ≠ NP or of P = NP would be; the Riemann tower is there to compare what exists.</li>
+        <li>Mirza counts the Riemann chain in files. Here a level is one link, so the tallest chain, <span data-k="chain">3</span> levels, joins <span data-k="chain1">4</span> lemmas. The gap is the same either way.</li>
+        <li>Where an area or a ring sits sideways is a layout choice.</li>
+        <li>The record changes every hour. This is one snapshot.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <p>The way of drawing is Mirza's: dots and threads, height by chain length, and select a piece to light what it rests on, from <a href="https://bosnadev.com/lab/riemann" target="_blank" rel="noopener">A map of a 17-million-line proof</a>. The Riemann numbers are from his page. His code is not used; this page and its data are rebuilt from scratch.</p>
+    <p>Data: the public export of pequalnp.com, snapshot <span id="snap2">…</span>. An independent view, not made by or affiliated with pequalnp.com.</p>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const fmt = (n) => n.toLocaleString('en-US');
+  const css = getComputedStyle(document.documentElement);
+  const V = (n) => css.getPropertyValue(n).trim();
+  const COL = { c: V('--checked'), j: V('--open'), w: V('--work'), r: V('--refuted'), x: V('--retired'), b: V('--blocked') };
+  const T = { fg: V('--fg'), muted: V('--muted'), faint: V('--faint'), rule: V('--rule'), bg: V('--bg'), panel: V('--panel'),
+              below: V('--below'), above: V('--above'), ghost: V('--ghost'), tower: V('--tower') };
+  const F = { display: V('--f-display'), body: V('--f-body'), mono: V('--f-mono') };
+  const ORDER = 'cwjbxr';           // floor rows, back to front
+  const NAMES = { c: 'checked', j: 'open', w: 'in work', r: 'refuted', x: 'retired', b: 'blocked' };
+  const SIDE = { p_eq_np: 'aims at P = NP', p_neq_np: 'aims at P ≠ NP', neutral: 'neutral' };
+  const ARROW = { p_eq_np: '→ P = NP', p_neq_np: '→ P ≠ NP', neutral: 'neutral' };
+  const rgba = (hex, a) => { const h = hex.replace('#', ''); const n = parseInt(h.length === 3 ? h.replace(/./g, '$&$&') : h, 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+
+  let D, N, P, prog, lvl, deps, users, comp, compSize, S;
+  let view = -1;                    // -1: every program; else one program index
+  let sel = -1, selClaim = false, L = null;
+
+  function prep(d) {
+    D = d; N = d.n.length; P = d.programs;
+    prog = new Uint8Array(N); P.forEach((p, i) => prog.fill(i, p.first, p.first + p.count));
+    lvl = Uint8Array.from(d.lv, (ch) => ch.charCodeAt(0) - 48);
+    deps = Array.from({ length: N }, () => []); users = Array.from({ length: N }, () => []);
+    for (const [a, b] of d.links) { deps[a].push(b); users[b].push(a); }
+    const par = Int32Array.from({ length: N }, (_, i) => i);
+    const find = (a) => { while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; };
+    for (const [a, b] of d.links) par[find(a)] = find(b);
+    comp = new Int32Array(N); compSize = new Map();
+    for (let k = 0; k < N; k++) { comp[k] = find(k); compSize.set(comp[k], (compSize.get(comp[k]) || 0) + 1); }
+    // every number on the page is counted here from the lemmas, then checked against graph_stats.py's numbers in the file
+    const st = {}; for (const ch of d.s) st[ch] = (st[ch] || 0) + 1;
+    const lv = []; for (let k = 0; k < N; k++) lv[lvl[k]] = (lv[lvl[k]] || 0) + 1;
+    const touched = new Set(); for (const [a, b] of d.links) { touched.add(a); touched.add(b); }
+    const sizes = [...compSize.values()].sort((a, b) => b - a);
+    S = { lemmas: N, status: st, links: d.links.length, levels: lv, chain: lv.length - 1, alone: N - touched.size,
+          largest: sizes[0], pieces: sizes.length, r: d.stats.riemann_for_comparison };
+    const g = d.stats, bad = [];
+    if (g.lemmas !== S.lemmas) bad.push('lemmas'); if (g.links !== S.links) bad.push('links');
+    if (g.longest_chain !== S.chain) bad.push('chain'); if (g.lemmas_linked_to_nothing !== S.alone) bad.push('alone');
+    if (g.largest_pieces[0] !== S.largest) bad.push('largest'); if (g.pieces !== S.pieces) bad.push('pieces');
+    for (const [k, n] of Object.entries(st)) if (g.status[NAMES[k]] !== n) bad.push('status ' + k);
+    if (bad.length) console.warn('data.json disagrees with graph_stats.py on', bad);
+  }
+  const lid = (k) => `L-${P[prog[k]].key}-${String(D.n[k]).padStart(3, '0')}`;
+  function findId(s) {
+    const m = /^L-([a-z]+)-(\d+)$/.exec(String(s).trim()); if (!m) return -1;
+    const p = P.find((q) => q.key === m[1]); if (!p) return -1;
+    let lo = p.first, hi = p.first + p.count - 1; const n = +m[2];
+    while (lo <= hi) { const mid = (lo + hi) >> 1; if (D.n[mid] === n) return mid; if (D.n[mid] < n) lo = mid + 1; else hi = mid - 1; }
+    return -1;
+  }
+  const reach = (k, nb) => { const seen = new Set(), st = [k]; while (st.length) for (const x of nb[st.pop()]) if (!seen.has(x)) { seen.add(x); st.push(x); } return seen; };
+  const targetOf = new Map();
+
+  /* ---------- text and table ---------- */
+  function fillText() {
+    const when = new Date(D.source.generated_at);
+    const mon = when.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+    const snap = `${mon} ${when.getUTCDate()}, ${when.getUTCFullYear()}, ${String(when.getUTCHours()).padStart(2, '0')}:${String(when.getUTCMinutes()).padStart(2, '0')} UTC`;
+    $('#snap').textContent = snap; $('#snap2').textContent = snap;
+    const meta = P.find((p) => p.id === 'meta_complexity');
+    const vals = { r_chain: fmt(S.r.longest_chain), chain: fmt(S.chain), chain1: fmt(S.chain + 1), links: fmt(S.links),
+                   lv0: fmt(S.levels[0]), lemmas: fmt(S.lemmas), checked: fmt(S.status.c || 0), meta: fmt(meta.count) };
+    document.querySelectorAll('[data-k]').forEach((e) => { e.textContent = vals[e.dataset.k]; });
+    const other = S.lemmas - (S.status.c || 0) - (S.status.j || 0) - (S.status.r || 0);
+    const alg = P.find((p) => p.id === 'p_eq_np_search');
+    const rows = [
+      ['Pieces', `${fmt(S.r.files)} files`, `${fmt(S.lemmas)} lemmas`],
+      ['Links', `${fmt(S.r.imports)} imports`, `${fmt(S.links)}`],
+      ['Longest chain', `${fmt(S.r.longest_chain)}`, `${fmt(S.chain)}`],
+      ['Largest connected piece', 'all of it', `${fmt(S.largest)} lemmas`],
+      ['Linked to nothing', 'none', `${fmt(S.alone)} lemmas`],
+      ['Status', 'all checked', `${fmt(S.status.c || 0)} checked, ${fmt(S.status.j || 0)} open, ${fmt(S.status.r || 0)} refuted, ${fmt(other)} other`],
+      ['At the top', 'the theorem', [`nothing yet: no lemma states P ≠ NP, and P = NP appears only as `, alg.target, `, ${NAMES[D.s[findId(alg.target)]]}`]],
+    ];
+    const tb = $('#tbl'); tb.replaceChildren();
+    for (const [h, a, b] of rows) { const tr = document.createElement('tr'); const th = document.createElement('th'); th.scope = 'row'; th.textContent = h; tr.append(th);
+      for (const v of [a, b]) { const td = document.createElement('td'); if (Array.isArray(v)) td.append(v[0], el('span', { class: 'num', text: v[1] }), v[2]); else td.textContent = v; tr.append(td); } tb.append(tr); }
+    $('#towers').setAttribute('aria-label', `Two towers drawn to one scale: the Riemann proof's longest chain is ${S.r.longest_chain} levels; the pequalnp record's is ${S.chain}.`);
+    // legend
+    const lg = $('#legend'); lg.replaceChildren();
+    const add = (cls, style, text) => { const s = document.createElement('span'); const i = document.createElement('i'); i.className = 'sw ' + cls; if (style) i.style.background = style; s.append(i, text); lg.append(s); };
+    for (const ch of 'cjwrxb') if (S.status[ch]) add('', COL[ch], `${NAMES[ch]} ${fmt(S.status[ch])}`);
+    add('line', null, `relies on (${fmt(S.links)} threads)`);
+    add('ring', null, 'program target');
+  }
+
+  /* ---------- the towers: 203 against 3 ---------- */
+  function sizeCanvas(cv, W, H) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.height = H + 'px';
+    const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return ctx;
+  }
+  function drawTowers() {
+    const cv = $('#towers'), W = cv.clientWidth; if (!W) return;
+    const phone = W < 520, Hc = phone ? 380 : 430;
+    const ctx = sizeCanvas(cv, W, Hc);
+    const R = S.r.longest_chain, top = 44, base = Hc - 58, pitch = (base - top) / R;
+    const axisX = 30, tw = Math.min(phone ? 78 : 104, W * 0.22);
+    const x1 = axisX + 16, x2 = Math.max(x1 + tw + 70, W * 0.56);
+    ctx.font = `11px ${F.mono}`; ctx.textBaseline = 'middle';
+    for (let v = 0; v <= R; v += 50) {             // one scale for both towers
+      const y = base - v * pitch;
+      ctx.strokeStyle = T.rule; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(axisX + 4, Math.round(y) + 0.5); ctx.lineTo(W - 2, Math.round(y) + 0.5); ctx.stroke();
+      ctx.fillStyle = T.faint; ctx.textAlign = 'right'; ctx.fillText(String(v), axisX, y);
+    }
+    ctx.textAlign = 'left'; ctx.fillStyle = T.faint; ctx.fillText('levels', 2, top - 24);
+    // Riemann tower
+    const g = ctx.createLinearGradient(0, base, 0, top); g.addColorStop(0, rgba(T.tower, 0.22)); g.addColorStop(1, rgba(T.tower, 0.75));
+    ctx.fillStyle = g; ctx.fillRect(x1, top, tw, base - top);
+    ctx.fillStyle = rgba(T.bg, 0.35); for (let v = 10; v < R; v += 10) ctx.fillRect(x1, base - v * pitch, tw, 1);
+    ctx.fillStyle = T.fg; ctx.beginPath(); ctx.arc(x1 + tw / 2, top, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = `700 ${phone ? 34 : 42}px ${F.display}`; ctx.fillStyle = T.fg; ctx.fillText(fmt(R), x1 + tw + 10, top + (phone ? 12 : 14));
+    ctx.font = `12px ${F.body}`; ctx.fillStyle = T.muted; ctx.fillText('levels up to the theorem', x1 + tw + 10, top + (phone ? 30 : 34));
+    // the record's tower, same scale
+    const h2 = S.chain * pitch;
+    ctx.fillStyle = rgba(T.tower, 0.75); ctx.fillRect(x2, base - h2, tw, h2);
+    ctx.fillStyle = rgba(T.bg, 0.6); for (let v = 1; v < S.chain; v++) ctx.fillRect(x2, base - v * pitch, tw, 0.6);
+    const lx = x2 + tw * 0.5, ly = base - h2 - 2, tx = x2 + tw * 0.5, ty = base - (phone ? 70 : 84);
+    ctx.strokeStyle = T.muted; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(tx, ty + 6); ctx.stroke();
+    ctx.font = `700 ${phone ? 34 : 42}px ${F.display}`; ctx.fillStyle = T.fg; ctx.textAlign = 'center'; ctx.fillText(fmt(S.chain), tx, ty - (phone ? 22 : 26));
+    ctx.font = `12px ${F.body}`; ctx.fillStyle = T.muted; ctx.fillText('levels', tx, ty - 4);
+    // names under the towers
+    ctx.textAlign = 'left';
+    const name = (x, a, b) => { ctx.font = `600 13px ${F.body}`; ctx.fillStyle = T.fg; ctx.fillText(a, x, base + 22); ctx.font = `12px ${F.mono}`; ctx.fillStyle = T.muted; ctx.fillText(b, x, base + 40); };
+    name(x1, 'Riemann proof', `${fmt(S.r.files)} files`);
+    name(x2, 'pequalnp record', `${fmt(S.lemmas)} lemmas`);
+    ctx.strokeStyle = T.faint; ctx.beginPath(); ctx.moveTo(axisX + 4, base + 0.5); ctx.lineTo(W - 2, base + 0.5); ctx.stroke();
+  }
+
+  /* ---------- the spire ---------- */
+  function linkedOrder(ks) {          // components together, biggest first, so threads stay short
+    return ks.slice().sort((a, b) => (compSize.get(comp[b]) - compSize.get(comp[a])) || (comp[a] - comp[b]) || (lvl[a] - lvl[b]) || (a - b));
+  }
+  function layout(W) {
+    const phone = W < 640, cv = $('#spire'), ctx = cv.getContext('2d');
+    const progs = view < 0 ? P.map((_, i) => i) : [view];
+    const H = phone ? 36 : 46, k = 0.6, padL = phone ? 30 : 40, padR = phone ? 4 : 12;
+    const gap = progs.length > 1 ? (phone ? 7 : 18) : 0;
+    const avail = W - padL - padR - gap * (progs.length - 1);
+    const sp = phone ? 2.8 : 6;
+    const items = progs.map((pi) => {
+      const p = P[pi], floor = [], up = [];
+      for (let q = p.first; q < p.first + p.count; q++) (lvl[q] ? up : floor).push(q);
+      return { pi, p, floor, up };
+    });
+    if (items.length === 1) items[0].w = avail;
+    else {
+      const big = items.reduce((a, b) => (b.floor.length > a.floor.length ? b : a)), s0 = phone ? 1.4 : 2.6;
+      let sum = 0;
+      for (const it of items) if (it !== big) { it.w = Math.max(Math.sqrt(it.floor.length) * 1.3 * s0, it.up.length * sp, phone ? 9 : 64); sum += it.w; }
+      const minBig = avail * 0.36;
+      if (avail - sum < minBig) { const f = (avail - minBig) / sum; for (const it of items) if (it !== big) it.w *= f; sum = avail - minBig; }
+      big.w = avail - sum;
+    }
+    const Dmax = phone ? 190 : 200;
+    let s = Infinity; for (const it of items) if (it.floor.length) s = Math.min(s, Math.sqrt(Dmax * it.w / (it.floor.length * k)));
+    s = Math.max(1.15, Math.min(s, phone ? 9 : 12));
+    const rowH = s * k, out = { W, phone, H, s, rowH, padL, padR, items, x: new Float32Array(N).fill(NaN), y: new Float32Array(N).fill(NaN), progs };
+    // horizontal: blocks left to right
+    let x0 = padL;
+    for (const it of items) { it.x0 = x0; x0 += it.w + gap; it.cols = Math.max(1, Math.floor(it.w / s)); it.rows = Math.ceil(it.floor.length / it.cols); it.cw = it.w / it.cols; }
+    const maxLv = S.chain;
+    // vertical: claim, targets, gap, levels, floor, names
+    ctx.font = `600 12px ${F.body}`;
+    const yClaim = 36, yT0 = phone ? 104 : 100, tRow = 46;
+    const ghosts = [];
+    for (const it of items) {
+      const t = findId(it.p.target); if (t < 0) continue;
+      const a = ctx.measureText(it.p.name).width; ctx.font = `11px ${F.mono}`; const b = ctx.measureText(NAMES[D.s[t]]).width; ctx.font = `600 12px ${F.body}`;
+      // phones have no room for the side each program aims at
+      const l2 = phone ? NAMES[D.s[t]] : `${NAMES[D.s[t]]} · ${ARROW[it.p.aims_at]}`; ctx.font = `11px ${F.mono}`; const b2 = ctx.measureText(l2).width; ctx.font = `600 12px ${F.body}`;
+      ghosts.push({ k: t, it, gx: it.x0 + it.w / 2, w: Math.max(a, b, b2) + 4, l1: it.p.name, l2 });
+    }
+    ghosts.sort((a, b) => a.gx - b.gx);
+    const rowsUsed = [];
+    for (const g of ghosts) {   // each name sits under its ring: centered, or hanging right or left of it, in the first row with room
+      const cands = [g.gx - g.w / 2, g.gx - 8, g.gx - g.w + 8].map((x) => Math.min(Math.max(x, 2), W - g.w - 2));
+      let r = 0, lx = null;
+      for (; lx === null; r++) for (const x of cands) if (!(rowsUsed[r] || []).some((o) => x < o.lx + o.w + 10 && o.lx < x + g.w + 10)) { lx = x; break; }
+      r--; g.lx = lx; (rowsUsed[r] ||= []).push(g); g.row = r; g.gy = yT0 + r * tRow;
+    }
+    const yTb = yT0 + Math.max(1, rowsUsed.length) * tRow - 8;
+    const gapH = phone ? 96 : 86;
+    const yG = yTb + gapH + maxLv * H;
+    Object.assign(out, { yClaim, yT0, yTb, yG, ghosts, gapH });
+    // place lemmas
+    for (const it of items) {
+      const { p, floor, up, cols } = it;
+      const occ = new Uint8Array(cols * (it.rows + 2));
+      const put = (q, c, r) => { out.x[q] = it.x0 + (c + 0.5) * it.cw; out.y[q] = yG + 5 + (r + 0.5) * rowH; occ[r * cols + c] = 1; };
+      const free = (want) => { // nearest free cell to a wanted column, back rows first
+        for (let r = 0; r < it.rows + 2; r++) for (let d = 0; d < cols; d++) for (const c of [want - d, want + d]) if (c >= 0 && c < cols && !occ[r * cols + c]) return [c, r];
+        return [0, 0];
+      };
+      const linked = linkedOrder(floor.filter((q) => deps[q].length || users[q].length).concat(up));
+      linked.forEach((q, i) => {
+        const t = (i + 0.5) / linked.length;
+        if (lvl[q]) { out.x[q] = it.x0 + t * it.w; out.y[q] = yG - lvl[q] * H; }
+        else { const [c, r] = free(Math.floor(t * cols)); put(q, c, r); }
+      });
+      const tgt = findId(p.target);
+      if (tgt >= 0 && Number.isNaN(out.x[tgt])) { const [c, r] = free(Math.floor(cols / 2)); put(tgt, c, r); }
+      const rest = floor.filter((q) => Number.isNaN(out.x[q])).sort((a, b) => (ORDER.indexOf(D.s[a]) - ORDER.indexOf(D.s[b])) || (a - b));
+      let cell = 0;
+      for (const q of rest) { while (occ[cell]) cell++; put(q, cell % cols, Math.floor(cell / cols)); }
+      it.depth = it.rows * rowH;
+      it.spacing = up.length ? it.w / up.length : it.w;
+      it.rUp = Math.max(1.7, Math.min(4.5, it.spacing * 0.36));
+    }
+    // program names under each area, with a leader that crosses nothing; turned on its side where there is no room
+    const rects = items.map((it) => ({ x: it.x0 - 2, y: yG, w: it.w + 4, h: it.depth + 8 }));
+    const names = [], order = items.slice().sort((a, b) => b.floor.length - a.floor.length);
+    const clash = (x, y, w, h, cx, from, own) => rects.concat(names).some((o) => o !== own && (
+      (x < o.x + o.w + 6 && o.x < x + w + 6 && y < o.y + o.h + 3 && o.y < y + h + 3)          // the name itself
+      || (cx >= o.x - 3 && cx <= o.x + o.w + 3 && o.y < y && o.y + o.h > from)));              // its leader
+    for (const it of order) {
+      ctx.font = `600 12px ${F.body}`; const a = ctx.measureText(it.p.name).width;
+      const l2 = `${fmt(it.p.count)} lemmas`; ctx.font = `11px ${F.mono}`; const b = ctx.measureText(l2).width;
+      const w = Math.max(a, b) + 4, h = 30, cx = it.x0 + it.w / 2, from = yG + 5 + it.depth + 2;
+      const cands = [cx - w / 2, it.x0, it.x0 + it.w - w].map((x) => Math.min(Math.max(x, 2), W - w - 2)).filter((x) => x <= cx && cx <= x + w);
+      let placed = null;
+      for (let ny = from + 8; ny <= from + 130 && !placed; ny += 4) for (const x of cands) if (!clash(x, ny, w, h, cx, from, rects[items.indexOf(it)])) { placed = { x, y: ny, w, h }; break; }
+      if (!placed) {   // on its side, reading up, hanging from the area
+        ctx.font = `600 12px ${F.body}`; const r1 = ctx.measureText(it.p.name).width; ctx.font = `11px ${F.mono}`; const r2 = ctx.measureText(` · ${fmt(it.p.count)}`).width;
+        placed = { x: cx - 8, y: from + 6, w: 16, h: r1 + r2 + 2, rot: true, r1, r2 };
+      }
+      names.push(Object.assign(placed, { it, l1: it.p.name, l2, cx, from }));
+    }
+    out.names = names;
+    out.Hc = Math.ceil(Math.max(...names.map((n) => n.y + n.h)) + 6);
+    return out;
+  }
+
+  function drawSpire() {
+    const cv = $('#spire'), W = cv.clientWidth; if (!W) return;
+    if (!L || L.W !== W || L.view !== view) { L = layout(W); L.view = view; }
+    const ctx = sizeCanvas(cv, W, L.Hc);
+    const { yG, H, s, rowH, items, padL, padR } = L;
+    const inView = (q) => !Number.isNaN(L.x[q]);
+    const lit = sel >= 0 ? { below: reach(sel, deps), above: reach(sel, users) } : null;
+    // the claim
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.font = `700 ${L.phone ? 30 : 36}px ${F.display}`; ctx.fillStyle = selClaim ? T.fg : rgba(T.ghost, 0.82);
+    ctx.fillText('P ?= NP', W / 2, L.yClaim);
+    ctx.font = `11px ${F.mono}`; ctx.fillStyle = T.muted; ctx.fillText('the claim · no lemma states it', W / 2, L.yClaim + 17);
+    L.claimBox = { x: W / 2 - 90, y: L.yClaim - 30, w: 180, h: 52 };
+    if (selClaim) { ctx.strokeStyle = T.fg; ctx.lineWidth = 1.5; ctx.strokeRect(W / 2 - 64, L.yClaim - 30, 128, 54); }
+    // levels: guides and the ruler
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.font = `10.5px ${F.mono}`;
+    for (let v = 0; v <= S.chain; v++) {
+      const y = Math.round(yG - v * H) + 0.5;
+      ctx.strokeStyle = v ? T.rule : T.faint; ctx.lineWidth = 1; ctx.setLineDash(v ? [3, 4] : []);
+      ctx.beginPath(); ctx.moveTo(padL - 4, y); ctx.lineTo(W - padR, y); ctx.stroke();
+      ctx.fillStyle = T.faint; ctx.fillText(String(v), padL - 8, y);
+    }
+    ctx.setLineDash([]);
+    ctx.save(); ctx.translate(7, yG - S.chain * H / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillText('level', 0, 0); ctx.restore();
+    // the empty space, and where Riemann's top would be at this scale
+    const up = S.r.longest_chain * H, screens = up / Math.max(500, window.innerHeight || 800);
+    const ax = padL + 4, ay0 = yG - S.chain * H - 10, ay1 = L.yTb + 18;
+    ctx.strokeStyle = T.faint; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(ax, ay0); ctx.lineTo(ax, ay1); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(ax - 4, ay1 + 5); ctx.lineTo(ax, ay1); ctx.lineTo(ax + 4, ay1 + 5); ctx.stroke();
+    // program areas
+    for (const it of items) { ctx.fillStyle = rgba(T.fg, 0.03); ctx.fillRect(it.x0 - 2, yG + 2, it.w + 4, it.depth + 6); }
+    // floor dots
+    const side = Math.max(0.9, s * 0.72);
+    const sideY = Math.max(0.8, Math.min(side, rowH * 0.8));
+    for (const it of items) for (const q of it.floor) { ctx.fillStyle = COL[D.s[q]]; ctx.fillRect(L.x[q] - side / 2, L.y[q] - sideY / 2, side, sideY); }
+    // threads
+    ctx.lineWidth = L.phone ? 0.8 : 1;
+    const offside = new Map();
+    for (const [a, b] of D.links) {
+      if (inView(a) && inView(b)) { ctx.strokeStyle = rgba(T.fg, 0.32); ctx.beginPath(); ctx.moveTo(L.x[a], L.y[a]); ctx.lineTo(L.x[b], L.y[b]); ctx.stroke(); }
+      else if (inView(a) || inView(b)) {   // a thread to a program not shown: run it off the side, at the height of the lemma it reaches
+        const q = inView(a) ? a : b, o = inView(a) ? b : a, left = prog[o] < view, ex = left ? padL : W - padR, ey = yG - lvl[o] * H - 6;
+        ctx.strokeStyle = rgba(T.fg, 0.3); ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(L.x[q], L.y[q]); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]);
+        offside.set(o, { left, ey });
+      }
+    }
+    const stacked = new Map();
+    for (const [o, { left, ey }] of offside) {   // name each lemma off the side once
+      const key = `${left}${ey}`, n = stacked.get(key) || 0; stacked.set(key, n + 1);
+      const t = left ? `← ${lid(o)}` : `${lid(o)} →`, y = ey - 6 - n * 14;
+      ctx.font = `10.5px ${F.mono}`; const tw = ctx.measureText(t).width;
+      ctx.fillStyle = T.bg; ctx.fillRect(left ? padL : W - padR - tw - 4, y - 10, tw + 4, 14);
+      ctx.fillStyle = T.muted; ctx.textAlign = left ? 'left' : 'right'; ctx.textBaseline = 'alphabetic'; ctx.fillText(t, left ? padL + 2 : W - padR - 2, y);
+    }
+    // raised lemmas
+    for (const it of items) for (const q of it.up) { ctx.fillStyle = COL[D.s[q]]; ctx.beginPath(); ctx.arc(L.x[q], L.y[q], it.rUp, 0, Math.PI * 2); ctx.fill(); }
+    // targets: faint rings above, dashed down to where the lemma is
+    for (const g of L.ghosts) {
+      ctx.strokeStyle = rgba(T.ghost, 0.28); ctx.lineWidth = 1; ctx.setLineDash([2, 4]);
+      ctx.beginPath(); ctx.moveTo(g.gx, g.gy + 7); ctx.lineTo(L.x[g.k], L.y[g.k] - 4); ctx.stroke(); ctx.setLineDash([]);
+    }
+    for (const g of L.ghosts) {
+      const tx = L.x[g.k], ty = L.y[g.k];
+      ctx.strokeStyle = rgba(T.ghost, sel === g.k ? 1 : 0.6); ctx.lineWidth = 1.5; ctx.setLineDash(D.s[g.k] === 'c' ? [] : [2.5, 2.5]);
+      ctx.beginPath(); ctx.arc(g.gx, g.gy, 6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(tx, ty, Math.max(3.2, side + 1.5), 0, Math.PI * 2); ctx.strokeStyle = rgba(T.ghost, 0.75); ctx.lineWidth = 1; ctx.stroke();
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = T.bg; ctx.fillRect(g.lx, g.gy + 9, g.w, 29);
+      ctx.font = `600 12px ${F.body}`; ctx.fillStyle = T.fg; ctx.fillText(g.l1, g.lx + 2, g.gy + 21);
+      ctx.font = `11px ${F.mono}`; ctx.fillStyle = T.muted; ctx.fillText(g.l2, g.lx + 2, g.gy + 34);
+    }
+    // the Riemann note, over the dashed lines
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = T.muted; ctx.font = `11px ${F.mono}`;
+    const midY = (ay0 + ay1) / 2, n1 = `Riemann's top: ${S.r.longest_chain} levels up,`, n2 = `${fmt(Math.round(up))} px at this scale (${screens >= 10 ? Math.round(screens) : screens.toFixed(1)} screens)`;
+    ctx.fillStyle = T.bg; ctx.fillRect(ax + 6, midY - 15, Math.max(ctx.measureText(n1).width, ctx.measureText(n2).width) + 8, 34); ctx.fillStyle = T.muted;
+    ctx.fillText(n1, ax + 10, midY - 2); ctx.fillText(n2, ax + 10, midY + 13);
+    // program names
+    for (const n of L.names) {
+      if (n.rot) {
+        ctx.save(); ctx.translate(n.cx + 4, n.y); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+        ctx.font = `11px ${F.mono}`; ctx.fillStyle = T.muted; ctx.fillText(` · ${fmt(n.it.p.count)}`, 0, 0);
+        ctx.font = `600 12px ${F.body}`; ctx.fillStyle = T.fg; ctx.fillText(n.l1, -n.r2, 0); ctx.restore(); continue;
+      }
+      if (n.y > n.from + 12) { ctx.strokeStyle = T.faint; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(n.cx, n.from); ctx.lineTo(n.cx, n.y - 2); ctx.stroke(); }
+      ctx.textAlign = 'left'; ctx.font = `600 12px ${F.body}`; ctx.fillStyle = T.fg; ctx.fillText(n.l1, n.x + 2, n.y + 12);
+      ctx.font = `11px ${F.mono}`; ctx.fillStyle = T.muted; ctx.fillText(n.l2, n.x + 2, n.y + 26);
+    }
+    // selection: light what it rests on and what rests on it
+    if (lit) {
+      ctx.fillStyle = rgba(T.bg, 0.5); ctx.fillRect(0, yG - S.chain * H - 14, W, yG + 6 + Math.max(...items.map((i) => i.depth)) - (yG - S.chain * H - 14) + 4);
+      const ring = (q, col, r, w) => { if (!inView(q)) return; ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(L.x[q], L.y[q], r, 0, Math.PI * 2); ctx.stroke(); };
+      const dot = (q) => { if (!inView(q)) return; const it = items.find((i) => i.pi === prog[q]); ctx.fillStyle = COL[D.s[q]]; ctx.beginPath(); ctx.arc(L.x[q], L.y[q], lvl[q] ? it.rUp : Math.max(1.4, side * 0.7), 0, Math.PI * 2); ctx.fill(); };
+      ctx.lineWidth = 1.6;
+      for (const [a, b] of D.links) {
+        const dn = (a === sel || lit.below.has(a)) && lit.below.has(b), upw = (b === sel || lit.above.has(b)) && lit.above.has(a);
+        if ((dn || upw) && inView(a) && inView(b)) { ctx.strokeStyle = dn ? T.below : T.above; ctx.beginPath(); ctx.moveTo(L.x[a], L.y[a]); ctx.lineTo(L.x[b], L.y[b]); ctx.stroke(); }
+      }
+      for (const q of lit.below) { dot(q); ring(q, T.below, 4.2, 1.2); }
+      for (const q of lit.above) { dot(q); ring(q, T.above, 4.2, 1.2); }
+      dot(sel); ring(sel, T.fg, 7.5, 2);
+    }
+    const shown = L.progs.map((i) => P[i].name).join(', ');
+    cv.setAttribute('aria-label', `Lemmas of ${shown} as dots: ${fmt(S.levels[0])} on the floor at level 0 and ${fmt(S.lemmas - S.levels[0])} above it, at most ${S.chain} levels up; the targets and the claim float above with nothing connecting to them.${sel >= 0 ? ' Selected: ' + lid(sel) + '.' : ''}`);
+  }
+
+  function pick(px, py) {
+    if (!L) return null;
+    const cb = L.claimBox; if (px >= cb.x && px <= cb.x + cb.w && py >= cb.y && py <= cb.y + cb.h) return { claim: true };
+    let best = -1, bd = Infinity;
+    for (const g of L.ghosts) { const d = Math.hypot(px - g.gx, py - g.gy) - 6; if (d < bd) { bd = d; best = g.k; } if (px >= g.lx && px <= g.lx + g.w && py >= g.gy + 8 && py <= g.gy + 38) { bd = -1; best = g.k; } }
+    for (const it of L.items) {
+      for (const q of it.up) { const d = Math.hypot(px - L.x[q], py - L.y[q]) - 3; if (d < bd) { bd = d; best = q; } }
+      if (py < L.yG - 6 || py > L.yG + it.depth + 14 || px < it.x0 - 12 || px > it.x0 + it.w + 12) continue;
+      for (const q of it.floor) { const d = Math.hypot(px - L.x[q], py - L.y[q]); if (d < bd) { bd = d; best = q; } }
+    }
+    return bd < (L.phone ? 16 : 12) ? { k: best } : null;
+  }
+
+  /* ---------- the card ---------- */
+  function el(tag, attrs, ...kids) { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs || {})) { if (k === 'text') e.textContent = v; else if (k === 'class') e.className = v; else e.setAttribute(k, v); } e.append(...kids); return e; }
+  const pill = (ch) => el('span', { class: 'pill' }, el('i', { class: 'sw', style: `background:${COL[ch]}` }), NAMES[ch]);
+  const idBtn = (q) => { const b = el('button', { class: 'idb', type: 'button' }, el('i', { class: 'sw', style: `background:${COL[D.s[q]]}` }), lid(q)); b.addEventListener('click', () => select(q)); return b; };
+  function list(dd, direct, all, none) {
+    if (!direct.length) { dd.append(el('span', { class: 'more', text: none })); return; }
+    const shown = direct.slice(0, 8); shown.forEach((q) => dd.append(idBtn(q)));
+    const extra = [];
+    if (direct.length > shown.length) extra.push(`${fmt(direct.length - shown.length)} more`);
+    if (all.size > direct.length) extra.push(`${fmt(all.size)} in all, counting the whole chain`);
+    if (extra.length) dd.append(el('span', { class: 'more', text: extra.join(' · ') }));
+  }
+  function renderCard() {
+    const c = $('#card'); c.replaceChildren();
+    if (selClaim) {
+      const alg = findId(P.find((p) => p.id === 'p_eq_np_search').target);
+      c.append(el('div', { class: 'top' }, 'P ?= NP', el('span', { class: 'pill', text: 'not in the record' })),
+        el('p', { class: 'ttl', text: 'No lemma in the record states P ≠ NP. P = NP appears only as “SAT is in P”, which is open.' }),
+        el('dl', {}, el('dt', { text: 'Closest' }), el('dd', {}, idBtn(alg))),
+        el('p', { class: 'sub', text: `No thread reaches the claim. The tallest chain in the record is ${S.chain} levels.` }));
+      return;
+    }
+    if (sel < 0) { c.append(el('p', { class: 'sub', text: 'Tap a dot to see its lemma.' })); return; }
+    const q = sel, p = P[prog[q]], title = D.titles[q];
+    const top = el('div', { class: 'top' }, lid(q), pill(D.s[q]), el('span', { class: 'sub', text: `level ${lvl[q]}` }));
+    const tg = targetOf.get(q);
+    c.append(top, el('p', { class: title ? 'ttl' : 'ttl none', text: title || 'No title in this snapshot of the record.' }),
+      el('p', { class: 'sub', text: `${p.title} · ${SIDE[p.aims_at]}${tg ? ' · the program\'s target' : ''}` }));
+    const dl = el('dl'), d1 = el('dd'), d2 = el('dd');
+    list(d1, deps[q], reach(q, deps), 'nothing (it is on the floor)');
+    list(d2, users[q], reach(q, users), 'nothing yet');
+    dl.append(el('dt', { text: 'Rests on' }), d1, el('dt', { text: 'Rests on it' }), d2);
+    c.append(dl, el('a', { class: 'out', href: `https://pequalnp.com/lemma#${lid(q)}`, target: '_blank', rel: 'noopener', text: 'Open it on pequalnp.com' }));
+  }
+  function select(q) {
+    selClaim = false; sel = q;
+    if (q >= 0 && view >= 0 && prog[q] !== view) setView(-1, false);
+    renderCard(); drawSpire();
+  }
+  function setView(v, redraw = true) {
+    view = v; L = null;
+    document.querySelectorAll('#views .chip').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.v === v)));
+    if (sel >= 0 && v >= 0 && prog[sel] !== v) { sel = -1; renderCard(); }
+    if (redraw) drawSpire();
+  }
+
+  function init(d) {
+    prep(d);
+    for (const p of P) { const t = findId(p.target); if (t >= 0) targetOf.set(t, p.id); }
+    fillText();
+    const views = $('#views');
+    const chip = (label, v) => { const b = el('button', { class: 'chip', type: 'button', 'data-v': String(v), 'aria-pressed': String(v === view), text: label }); b.addEventListener('click', () => setView(v)); views.append(b); };
+    chip('All', -1); P.forEach((p, i) => chip(p.name, i));
+    // the tallest checked lemma, the GCT target (the only target that rests on anything), the P = NP statement
+    let tall = -1; for (let q = 0; q < N; q++) if (D.s[q] === 'c' && (tall < 0 || lvl[q] > lvl[tall])) tall = q;
+    const jumps = $('#jumps');
+    const jump = (label, q) => { if (q < 0) return; const b = el('button', { class: 'chip', type: 'button', text: label }); b.addEventListener('click', () => select(q)); jumps.append(b); };
+    jump(`Tallest checked: ${lid(tall)}`, tall);
+    jump('GCT target', findId(P.find((p) => p.id === 'gct').target));
+    jump('SAT is in P', findId(P.find((p) => p.id === 'p_eq_np_search').target));
+    const cl = el('button', { class: 'chip', type: 'button', text: 'P ?= NP' }); cl.addEventListener('click', () => { sel = -1; selClaim = true; renderCard(); drawSpire(); }); jumps.append(cl);
+    sel = tall; renderCard();
+    drawTowers(); drawSpire();
+    const cv = $('#spire'), tip = $('#tip');
+    const at = (e) => { const b = cv.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+    cv.addEventListener('click', (e) => { const h = pick(...at(e)); if (!h) return; if (h.claim) { sel = -1; selClaim = true; renderCard(); drawSpire(); } else select(h.k); });
+    cv.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      const [x, y] = at(e), h = pick(x, y);
+      if (!h || h.claim) { tip.hidden = true; cv.style.cursor = h ? 'pointer' : 'crosshair'; return; }
+      cv.style.cursor = 'pointer'; tip.hidden = false;
+      tip.textContent = `${lid(h.k)} · ${NAMES[D.s[h.k]]} · level ${lvl[h.k]}`;
+      const tw = tip.offsetWidth; tip.style.left = `${Math.min(x + 12, cv.clientWidth - tw - 4)}px`; tip.style.top = `${y + 14}px`;
+    });
+    cv.addEventListener('pointerleave', () => { tip.hidden = true; });
+    let w0 = 0;
+    new ResizeObserver(() => { const w = $('#stage').clientWidth; if (w !== w0) { w0 = w; drawTowers(); drawSpire(); } }).observe(document.body);
+  }
+
+  fetch('data.json').then((r) => { if (!r.ok) throw new Error(`data.json: HTTP ${r.status}`); return r.json(); }).then(init)
+    .catch((e) => { $('#card').replaceChildren(); $('#stage').replaceChildren(Object.assign(document.createElement('p'), { className: 'err', textContent: `The record did not load (${e.message}). Reload to try again.` })); console.error(e); });
+})();
+</script>

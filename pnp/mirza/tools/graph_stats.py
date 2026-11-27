@@ -13,6 +13,8 @@ import sys
 from collections import Counter, defaultdict
 
 STATUS = {"c": "checked", "j": "open", "r": "refuted", "w": "in work", "b": "blocked", "x": "retired"}
+# From Mirza's page about the Lean proof of the Riemann Hypothesis (read November 26, 2026).
+RIEMANN = {"files": 175187, "imports": 753261, "longest_chain": 203, "source": "https://bosnadev.com/lab/riemann"}
 
 
 def load(data):
@@ -39,21 +41,22 @@ def below(i, deps):
     return seen
 
 
-def main():
-    if len(sys.argv) < 2:
-        sys.exit(__doc__)
-    data = sys.argv[1]
+def levels(status, deps):
+    """Level above the basics (Mirza's Spire): the longest chain of links beneath each lemma.
+    It never changes once a lemma is checked, so the picture stays put as the record grows."""
+    level = {}
+    for i in sorted(status, key=lambda i: len(below(i, deps))):
+        level[i] = max((1 + level.get(x, 0) for x in deps[i] if x in status), default=0)
+    return level
+
+
+def measure(data):
     status, deps, program = load(data)
     users = defaultdict(set)
     for i, ds in deps.items():
         for x in ds:
             users[x].add(i)
-
-    # level above the basics (Mirza's Spire): longest chain of links beneath a lemma.
-    # It never changes once a lemma is checked, so the picture stays put as the record grows.
-    level = {}
-    for i in sorted(status, key=lambda i: len(below(i, deps))):
-        level[i] = max((1 + level.get(x, 0) for x in deps[i] if x in status), default=0)
+    level = levels(status, deps)
 
     parent = {i: i for i in status}
 
@@ -78,7 +81,7 @@ def main():
             targets[p] = {"lemma": t, "status": STATUS.get(status.get(t), status.get(t)),
                           "rests_on": len(below(t, deps))}
 
-    out = {
+    return {
         "lemmas": len(status),
         "status": {STATUS.get(k, k): n for k, n in Counter(status.values()).most_common()},
         "links": sum(len(v) for v in deps.values()),
@@ -91,9 +94,14 @@ def main():
         "largest_pieces": sizes[:5],
         "lemmas_linked_to_nothing": sum(1 for s in sizes if s == 1),
         "targets": targets,
-        "riemann_for_comparison": {"files": 175187, "imports": 753261, "longest_chain": 203,
-                                   "source": "https://bosnadev.com/lab/riemann"},
+        "riemann_for_comparison": RIEMANN,
     }
+
+
+def main():
+    if len(sys.argv) < 2:
+        sys.exit(__doc__)
+    out = measure(sys.argv[1])
     if "--json" in sys.argv:
         json.dump(out, open(sys.argv[sys.argv.index("--json") + 1], "w"), indent=1)
     print(json.dumps(out, indent=1, ensure_ascii=False))
