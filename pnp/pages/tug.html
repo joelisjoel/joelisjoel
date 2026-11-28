@@ -113,7 +113,7 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rul
   </section>
 
   <section class="panel" aria-label="Overall proposition">
-    <div class="mhead"><h2>The knot: a toy confidence in P ≠ NP</h2><span class="mval" id="mval">50.0%<small>toward P ≠ NP</small></span></div>
+    <div class="mhead"><h2>The knot: toy odds that P = NP</h2><span class="mval" id="mval">50.0%<small>that P = NP</small></span></div>
     <div>
       <svg class="spark" id="spark" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
         <line class="base" x1="0" y1="100" x2="1000" y2="100" vector-effect="non-scaling-stroke"></line>
@@ -121,12 +121,12 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rul
         <path class="line" id="sparkline" d="" vector-effect="non-scaling-stroke"></path>
         <line class="now" id="sparknow" x1="0" y1="0" x2="0" y2="100" vector-effect="non-scaling-stroke"></line>
       </svg>
-      <div class="sparkaxis"><span id="sparkfrom">Start</span><span>height: 0% (P = NP) to 100% (P ≠ NP), dashed at 50%</span><span>snapshot</span></div>
+      <div class="sparkaxis"><span id="sparkfrom">Start</span><span>height: the toy odds that P = NP, 0% to 100%, dashed at 50%</span><span>snapshot</span></div>
     </div>
     <div class="ctl">
       <div class="grp" role="group" aria-label="Starting belief"><span class="lab">Start from</span>
         <button class="seg" type="button" id="prior-none" aria-pressed="true">No prior · 50%</button>
-        <button class="seg" type="button" id="prior-poll" aria-pressed="false">Experts' 2019 poll · 88%</button></div>
+        <button class="seg" type="button" id="prior-poll" aria-pressed="false">Experts' 2019 poll · 12% said P = NP</button></div>
       <div class="sl"><label for="eps">One checked chain step moves belief by <b id="epsv">0.010</b> log-odds</label><input type="range" id="eps" min="0" max="100" step="1" value="59"></div>
     </div>
     <p class="note" id="mnote"></p>
@@ -490,10 +490,10 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rul
   }
   function pullAt(t) { let lo = 0, hi = ev.length; while (lo < hi) { const m = (lo + hi) >> 1; if (ev[m][0] <= t) lo = m + 1; else hi = m; } return lo ? [cumPos[lo - 1], cumNeg[lo - 1]] : [0, 0]; }
   const confAt = (t) => { const [p, q] = pullAt(t); return 1 / (1 + Math.exp(-(mPrior + mEps * (p - q)))); };
-  function spark() { let d = ''; for (let k = 0; k <= 200; k++) { const t = (k / 200) * maxMin; d += `${k ? 'L' : 'M'}${k * 5},${(100 - confAt(t) * 100).toFixed(2)}`; } $('#sparkline').setAttribute('d', d); }
+  function spark() { let d = ''; for (let k = 0; k <= 200; k++) { const t = (k / 200) * maxMin; d += `${k ? 'L' : 'M'}${k * 5},${(confAt(t) * 100).toFixed(2)}`; } $('#sparkline').setAttribute('d', d); }
   function meter() {
     const cf = confAt(T), [p, q] = pullAt(T);
-    $('#mval').firstChild.nodeValue = `${(cf * 100).toFixed(1)}%`;
+    $('#mval').firstChild.nodeValue = `${((1 - cf) * 100).toFixed(1)}%`;
     const x = ((T / maxMin) * 1000).toFixed(1), now = $('#sparknow'); now.setAttribute('x1', x); now.setAttribute('x2', x);
     $('#mnote').textContent = `By ${whenPT(t0 + T * 60000)}: ${p.toFixed(1)} points of pull toward P ≠ NP, ${q.toFixed(1)} toward P = NP. Points per checked lemma: program target ${PULL.target}, hard link ${PULL.hard}, chain step or support ${PULL.chain}, other ${PULL.helper}; each lower bound used to kill a candidate algorithm ${PULL.kill}; each killed candidate ${PULL.candidate}. Snipers, killed and withdrawn lemmas, and the grey middle pull nothing. The weights are invented: slide them to see how much the flag depends on them. Real confidence in P vs NP should barely move on results like these.`;
   }

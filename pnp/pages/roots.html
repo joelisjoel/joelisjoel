@@ -147,7 +147,7 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rul
   </section>
 
   <section class="meter" aria-label="Overall proposition">
-    <div class="mhead"><h2>Overall proposition: a toy confidence in P ≠ NP</h2><span class="mval" id="mval">50.0%<small>toward P ≠ NP</small></span></div>
+    <div class="mhead"><h2>Overall proposition: toy odds that P = NP</h2><span class="mval" id="mval">50.0%<small>that P = NP</small></span></div>
     <div class="rope" aria-hidden="true">
       <span class="end l">P = NP</span>
       <div class="track"><i class="mid"></i><i class="prior" id="mprior"></i><i class="knot" id="knot"></i></div>
@@ -160,12 +160,12 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rul
         <path class="line" id="sparkline" d="" vector-effect="non-scaling-stroke"></path>
         <line class="now" id="sparknow" x1="0" y1="0" x2="0" y2="100" vector-effect="non-scaling-stroke"></line>
       </svg>
-      <div class="sparkaxis"><span id="sparkfrom">Nov 22</span><span>line height: 0% (P = NP) to 100% (P ≠ NP), dashed at 50%</span><span>snapshot</span></div>
+      <div class="sparkaxis"><span id="sparkfrom">Nov 22</span><span>line height: the toy odds that P = NP, 0% to 100%, dashed at 50%</span><span>snapshot</span></div>
     </div>
     <div class="mctl">
       <div class="grp" role="group" aria-label="Starting belief"><span class="lab">Start from</span>
         <button class="seg" type="button" id="prior-none" aria-pressed="true">No prior · 50%</button>
-        <button class="seg" type="button" id="prior-poll" aria-pressed="false">Experts' 2019 poll · 88%</button></div>
+        <button class="seg" type="button" id="prior-poll" aria-pressed="false">Experts' 2019 poll · 12% said P = NP</button></div>
       <div class="sl"><label for="eps">One checked chain step moves belief by <b id="epsv">0.010</b> log-odds</label>
         <input type="range" id="eps" min="0" max="100" step="1" value="59"></div>
     </div>
@@ -589,13 +589,13 @@ footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rul
   const conf = (t) => { const [p, q] = pullAt(t); return 1 / (1 + Math.exp(-(mPrior + mEps * (p - q)))); };
   function spark() {
     if (!ev.length && !rows) return; let d = '';
-    for (let k = 0; k <= 200; k++) { const t = (k / 200) * maxMin; d += `${k ? 'L' : 'M'}${(k * 5).toFixed(1)},${(100 - conf(t) * 100).toFixed(2)}`; }
+    for (let k = 0; k <= 200; k++) { const t = (k / 200) * maxMin; d += `${k ? 'L' : 'M'}${(k * 5).toFixed(1)},${(conf(t) * 100).toFixed(2)}`; }
     $('#sparkline').setAttribute('d', d);
   }
   function meter() {
     if (!rows) return;
     const c = conf(T), [p, q] = pullAt(T);
-    $('#mval').firstChild.nodeValue = `${(c * 100).toFixed(1)}%`;
+    $('#mval').firstChild.nodeValue = `${((1 - c) * 100).toFixed(1)}%`;
     $('#knot').style.left = `${c * 100}%`; $('#mprior').style.left = `${(1 / (1 + Math.exp(-mPrior))) * 100}%`;
     const x = ((T / maxMin) * 1000).toFixed(1); const now = $('#sparknow'); now.setAttribute('x1', x); now.setAttribute('x2', x);
     $('#mnote').textContent = `By ${whenPT(t0 + T * 60000)} the record adds ${p.toFixed(1)} points toward P ≠ NP and ${q.toFixed(1)} toward P = NP. `

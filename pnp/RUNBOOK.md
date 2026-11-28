@@ -58,7 +58,9 @@ fixed, because `tools/clip_text.py` maps each to a stretch of the record:
 | `n2` | the rest of the new hours | the other change worth saying |
 | `e1` | the end card | the checked total; nothing pulls toward P = NP; nothing has reached the claim |
 
-Rules: every number comes from the data and is checked; numbers are spelled as words; captions
+Rules: odds are always the chance that **P = NP** (the surprising answer): our toy odds, Manifold's
+"Does P = NP?" and the 2019 poll (12% said P = NP). Polymarket and Kalshi price whether the question
+gets settled, either way; say so whenever you quote them. Every number comes from the data and is checked; numbers are spelled as words; captions
 use `text` (with ≠ and =) and the voice reads `say` (words). Print each line's phonemes
 (`kokoro.tokenizer.phonemize`) and fix anything misread. Say what the data shows, not more:
 counts are not odds, and no lemma states P ≠ NP.

@@ -28,7 +28,7 @@ or affiliated with pequalnp.com.
 - `game.html`: v3, the tug of war, phone first. Proved lemmas anchor each side's ropes from its truth zone, the
   more resting on one the harder it pulls; open lemmas wait in the grey area by our guess at how likely each is
   true; the claim is the knot; a score (targets proved, chain steps), coaches with sourced quotes, the most active
-  players, and a timeline of our toy odds beside the Manifold, Polymarket and Kalshi markets. Also served at
+  players, and a timeline of our toy odds that P = NP beside the Manifold, Polymarket and Kalshi markets. Also served at
   joelisjoel.org/pnp/ (`pipeline/site_game.py` makes that copy).
 
 They were written as Claude artifacts, which wrap each file in a standard HTML document. To host

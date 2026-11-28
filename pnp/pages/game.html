@@ -78,7 +78,7 @@ canvas { display: block; width: 100%; touch-action: pan-y; cursor: crosshair; bo
 
 .market { border: 1px solid var(--rule); border-radius: 10px; background: var(--card); padding: 10px 12px; display: grid; gap: 6px; }
 .mrow { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.mrow b { font: 800 26px/1 var(--f-display); color: var(--neq); font-variant-numeric: tabular-nums; }
+.mrow b { font: 800 26px/1 var(--f-display); color: var(--eq); font-variant-numeric: tabular-nums; }
 .mrow span { font: 500 11.5px/1.3 var(--f-mono); color: var(--muted); }
 #spark { width: 100%; height: 120px; display: block; touch-action: none; cursor: ew-resize; }
 .mleg { display: grid; gap: 4px; margin: 2px 0 0; padding: 0; list-style: none; }
@@ -127,9 +127,9 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
   </section>
 
   <section class="market" aria-label="Toy odds over time">
-    <div class="mrow"><span>Odds on P vs NP over the record · drag to move in time</span><b id="odds">50%</b></div>
+    <div class="mrow"><span>Odds that P = NP, over the record · drag to move in time</span><b id="odds">50%</b></div>
     <svg id="spark" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"></svg>
-    <div class="mrow"><span id="sparkFrom">start</span><span>dashed: experts' poll, 2019 · bars: lemmas checked per hour</span><span>snapshot</span></div>
+    <div class="mrow"><span id="sparkFrom">start</span><span>dashed: experts who said P = NP, 2019 poll · bars: lemmas checked per hour</span><span>snapshot</span></div>
     <ul class="mleg" id="mleg"></ul>
   </section>
 
@@ -428,9 +428,13 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     ev.sort((a, b) => a[0] - b[0]); let s = 0; cum = ev.map((e) => (s += e[1]));
     $('#sparkFrom').textContent = fmtPT(t0, { month: 'short', day: 'numeric' });
     const ml = $('#mleg');
-    ml.append(el('li', {}, el('i', { style: 'background:var(--neq)' }), el('span', { class: 'q' }, 'Ours: toy odds that P ≠ NP', el('small', { text: 'invented weights' })), el('b', { id: 'oddsLeg', text: '' })));
-    for (const m of D.markets?.series || []) ml.append(el('li', { 'data-m': m.id }, el('i', { style: `background:var(--mk-${m.id})` }),
-      el('span', { class: 'q' }, el('a', { href: m.url, target: '_blank', rel: 'noopener noreferrer', text: `${m.source}: “${m.question}”` }), el('small', { text: `${m.kind === 'truth' ? 'whether it is true' : 'whether it gets settled'} · ${m.money}` })), el('b', { text: '' })));
+    ml.append(el('li', {}, el('i', { style: 'background:var(--eq)' }), el('span', { class: 'q' }, 'Ours: toy odds that P = NP', el('small', { text: 'invented weights' })), el('b', { id: 'oddsLeg', text: '' })));
+    const series = [...(D.markets?.series || [])].sort((a, b) => (a.kind === 'truth' ? 0 : 1) - (b.kind === 'truth' ? 0 : 1));
+    series.forEach((m, k) => {
+      if (m.kind !== 'truth' && (k === 0 || series[k - 1].kind === 'truth')) ml.append(el('li', { class: 'sub' }, el('span', {}), el('span', { class: 'q' }, el('small', { text: 'Not odds on the answer: whether it gets settled, either way' })), el('span', {})));
+      ml.append(el('li', { 'data-m': m.id }, el('i', { style: `background:var(--mk-${m.id})` }),
+        el('span', { class: 'q' }, el('a', { href: m.url, target: '_blank', rel: 'noopener noreferrer', text: `${m.source}: “${m.question}”` }), el('small', { text: `${m.kind === 'truth' ? 'chance that P = NP' : 'chance it gets settled'} · ${m.money}` })), el('b', { text: '' })));
+    });
     if (D.markets) ml.append(el('li', {}, el('span', {}), el('span', { class: 'q' }, el('small', { text: `Market prices as of ${whenPT(Date.parse(D.markets.asof))} PT; they move, and are not forecasts we vouch for.` })), el('span', {})));
     const sp = $('#spark'), seek = (e) => { const r = sp.getBoundingClientRect(); T = Math.max(0, Math.min(maxMin, ((e.clientX - r.left) / r.width) * maxMin)); if (playing) pause(); update(true); draw(); scoreboard(); };
     sp.addEventListener('pointerdown', (e) => { sp.setPointerCapture(e.pointerId); seek(e); }); sp.addEventListener('pointermove', (e) => { if (e.buttons) seek(e); });
@@ -445,10 +449,10 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
     for (let i = 0; i < N; i++) if (side[i] !== 0 && !sniper[i] && rows[i][2] === 0) bars[side[i]][Math.min(H - 1, Math.floor(rows[i][3] / 60))]++;
     const mx = Math.max(1, ...bars[1], ...bars[-1]);
     for (let h = 0; h < H; h++) { const v = bars[1][h]; if (v) sp.append(mk('rect', { x: (h / H) * 1000, y: 100 - (v / mx) * 26, width: Math.max(2, 1000 / H - 1), height: (v / mx) * 26, fill: 'var(--neq)', opacity: 0.35 })); }
-    if (D.poll) { const pp = D.poll.neq / D.poll.respondents; sp.append(mk('line', { x1: 0, x2: 1000, y1: y(pp), y2: y(pp), stroke: 'var(--muted)', 'stroke-dasharray': '6 5', 'vector-effect': 'non-scaling-stroke' })); }
+    if (D.poll) { const pp = D.poll.eq / D.poll.respondents; sp.append(mk('line', { x1: 0, x2: 1000, y1: y(pp), y2: y(pp), stroke: 'var(--muted)', 'stroke-dasharray': '6 5', 'vector-effect': 'non-scaling-stroke' })); }
     sp.append(mk('line', { x1: 0, x2: 1000, y1: 50, y2: 50, stroke: 'var(--rule)', 'vector-effect': 'non-scaling-stroke' }));
-    let d = ''; for (let k = 0; k <= 200; k++) { const t = (k / 200) * maxMin; d += `${k ? 'L' : 'M'}${k * 5},${y(odds(t)).toFixed(2)}`; }
-    sp.append(mk('path', { d, fill: 'none', stroke: 'var(--neq)', 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' }));
+    let d = ''; for (let k = 0; k <= 200; k++) { const t = (k / 200) * maxMin; d += `${k ? 'L' : 'M'}${k * 5},${y(1 - odds(t)).toFixed(2)}`; }
+    sp.append(mk('path', { d, fill: 'none', stroke: 'var(--eq)', 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' }));
     for (const m of D.markets?.series || []) {
       if (!m.points.length) continue; let dm = '';
       m.points.forEach(([t, p], k) => { const xx = (Math.min(t, maxMin) / maxMin) * 1000; dm += k ? `H${xx.toFixed(1)}V${y(p).toFixed(2)}` : `M${xx.toFixed(1)},${y(p).toFixed(2)}`; });
@@ -456,7 +460,7 @@ footer { font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule)
       sp.append(mk('path', { d: dm, fill: 'none', stroke: `var(--mk-${m.id})`, 'stroke-width': 1.6, opacity: 0.95, 'vector-effect': 'non-scaling-stroke' }));
     }
     const x = (T / maxMin) * 1000; sp.append(mk('line', { x1: x, x2: x, y1: 0, y2: 100, stroke: 'var(--fg)', 'vector-effect': 'non-scaling-stroke' }));
-    $('#odds').textContent = `${(odds(T) * 100).toFixed(0)}%`; if ($('#oddsLeg')) $('#oddsLeg').textContent = `${(odds(T) * 100).toFixed(0)}%`;
+    const oddsEq = `${((1 - odds(T)) * 100).toFixed(0)}%`; $('#odds').textContent = oddsEq; if ($('#oddsLeg')) $('#oddsLeg').textContent = oddsEq;
     for (const li of document.querySelectorAll('#mleg li[data-m]')) {
       const m = (D.markets?.series || []).find((x) => x.id === li.dataset.m), pts = m.points.filter((q) => q[0] <= T), v = (pts.at(-1) || m.points[0])?.[1];
       li.querySelector('b').textContent = v == null ? '–' : `${Math.round(v * 100)}%`;
