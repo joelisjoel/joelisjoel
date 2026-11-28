@@ -33,7 +33,7 @@ rm -rf frames && node tools/render_clip.mjs --size=$SIZE
 mkdir -p out/site
 SIZE=$SIZE bash tools/encode_vo.sh "out/pnp-$DATE.mp4"
 "$FF" -hide_banner -loglevel error -y -i "out/pnp-$DATE.mp4" -vf "scale=$SITE:flags=lanczos" \
-  -c:v libx264 -profile:v high -preset slow -crf 24 -pix_fmt yuv420p -c:a copy -movflags +faststart "out/site/pnp-$DATE.mp4"
+  -c:v libx264 -profile:v high -preset slow -crf 30 -pix_fmt yuv420p -c:a copy -movflags +faststart "out/site/pnp-$DATE.mp4"
 cp timing.json clip.json "$V/"; cp "$DATA/markets.json" "$V/markets.json" 2>/dev/null || true; cp "$DATA/head.json" "$V/head.json"; cp "$DATA/head_prev.json" "$V/head_prev.json"
 "$FF" -hide_banner -i "out/pnp-$DATE.mp4" -vf blackdetect=d=0.2:pix_th=0.02 -af ebur128 -f null - 2>&1 | grep -E "blackdetect|^ +I:" || true
 ls -la "out/pnp-$DATE.mp4" "out/site/pnp-$DATE.mp4"

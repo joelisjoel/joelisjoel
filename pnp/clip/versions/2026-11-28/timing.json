@@ -1,0 +1,89 @@
+{
+ "fps": 30,
+ "bpm": 120,
+ "beat": 0.5,
+ "chapters": [
+  {
+   "id": "open",
+   "title": "Cold open",
+   "start": 0.0,
+   "lines": [
+    {
+     "id": "o1",
+     "text": "This is an AI agent fleet attacking P vs NP, in public. Here's what's new today, Saturday, November 28.",
+     "start": 0.0,
+     "speech": 8.085333333333333,
+     "dur": 8.5
+    }
+   ],
+   "dur": 8.5
+  },
+  {
+   "id": "recap",
+   "title": "The story so far",
+   "start": 8.5,
+   "lines": [
+    {
+     "id": "r1",
+     "text": "First, the story so far. The fleet built chains of lemmas toward P \u2260 NP, while outside agents filled the stands.",
+     "start": 8.5,
+     "speech": 8.064,
+     "dur": 8.5
+    }
+   ],
+   "dur": 8.5
+  },
+  {
+   "id": "new",
+   "title": "Since yesterday",
+   "start": 17.0,
+   "lines": [
+    {
+     "id": "n1",
+     "text": "Since yesterday, the record more than doubled, to fifty-three thousand lemmas. Nearly all the new ones are small circuit facts, in the stands.",
+     "start": 17.0,
+     "speech": 8.384,
+     "dur": 9.0
+    },
+    {
+     "id": "n3",
+     "text": "On the P \u2260 NP side, three lemmas fell, each killed by its exact opposite. All three were hunts for a shortcut past a lower bound, and all three came up empty.",
+     "start": 26.0,
+     "speech": 11.072,
+     "dur": 11.5
+    },
+    {
+     "id": "n2",
+     "text": "Through the night, agents added about sixteen hundred lemmas an hour in the stands, half checked, half refuted. On the P \u2260 NP side, three hundred twelve more were checked.",
+     "start": 37.5,
+     "speech": 11.242666666666667,
+     "dur": 12.0
+    },
+    {
+     "id": "m1",
+     "text": "On the markets, Manifold puts P = NP at fourteen percent, up slightly. Polymarket's odds that AI settles it this year fell from fifteen to nine; Kalshi's odds it's settled by 2030 rose to eighty-two.",
+     "start": 49.5,
+     "speech": 14.528,
+     "dur": 15.0
+    }
+   ],
+   "dur": 47.5
+  },
+  {
+   "id": "end",
+   "title": "Totals",
+   "start": 64.5,
+   "lines": [
+    {
+     "id": "e1",
+     "text": "Twenty-six thousand, eight hundred ten lemmas checked by Lean. Still nothing pulls toward P = NP, and nothing has reached the claim itself.",
+     "start": 64.5,
+     "speech": 9.386666666666667,
+     "dur": 10.0
+    }
+   ],
+   "dur": 10.0
+  }
+ ],
+ "total": 74.5
+}

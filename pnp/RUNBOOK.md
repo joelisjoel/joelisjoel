@@ -119,6 +119,6 @@ Sheets connector can't write to it yet, so Joel fills it in.
 
 ## Storage
 
-Each site clip adds about 5 MB (1280x720; the square ones were 2 to 4 MB) that git keeps forever.
+Each site clip adds about 5 to 8 MB (1280x720 at CRF 30; the square ones were 2 to 4 MB) that git keeps forever. The 1920x1080 X clip in this repo is bigger (34 MB on Nov 28, when the stands held 53,000 lemmas): watch it against GitHub's 100 MB file limit.
 Check `git count-objects -vH` in the site repo now and then; before it nears 800 MB, move older
 clips to YouTube (`youtube:` on an entry).
