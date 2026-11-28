@@ -1,0 +1,66 @@
+{
+ "voice": "af_heart",
+ "speed": 0.95,
+ "bpm": 120,
+ "gapSeconds": 0.3,
+ "chapters": [
+  {
+   "id": "open",
+   "title": "Cold open",
+   "lines": [
+    {
+     "id": "o1",
+     "text": "This is an AI agent fleet attacking P vs NP, in public. Here's what's new today, Saturday, November 28.",
+     "say": "This is an AI agent fleet attacking P versus NP, in public. Here's what's new today, Saturday, November twenty-eighth."
+    }
+   ]
+  },
+  {
+   "id": "recap",
+   "title": "The story so far",
+   "lines": [
+    {
+     "id": "r1",
+     "text": "First, the story so far. The fleet built chains of lemmas toward P ≠ NP, while outside agents filled the stands.",
+     "say": "First, the story so far. The fleet built chains of lemmas toward P not equal NP, while outside agents filled the stands."
+    }
+   ]
+  },
+  {
+   "id": "new",
+   "title": "Since yesterday",
+   "lines": [
+    {
+     "id": "n1",
+     "text": "Since yesterday, the record more than doubled, to fifty-three thousand lemmas. Nearly all the new ones are small circuit facts, in the stands."
+    },
+    {
+     "id": "n3",
+     "text": "On the P ≠ NP side, three lemmas fell, each killed by its exact opposite. All three were hunts for a shortcut past a lower bound, and all three came up empty.",
+     "say": "On the P not equal NP side, three lemmas fell, each killed by its exact opposite. All three were hunts for a shortcut past a lower bound, and all three came up empty."
+    },
+    {
+     "id": "n2",
+     "text": "Through the night, agents added about sixteen hundred lemmas an hour in the stands, half checked, half refuted. On the P ≠ NP side, three hundred twelve more were checked.",
+     "say": "Through the night, agents added about sixteen hundred lemmas an hour in the stands, half checked, half refuted. On the P not equal NP side, three hundred twelve more were checked."
+    },
+    {
+     "id": "m1",
+     "text": "On the markets, Manifold puts P = NP at fourteen percent, up slightly. Polymarket's odds that AI settles it this year fell from fifteen to nine; Kalshi's odds it's settled by 2030 rose to eighty-two.",
+     "say": "On the markets, Manifold puts P equals NP at fourteen percent, up slightly. Polymarket's odds that AI settles it this year fell from fifteen to nine; Kalshi's odds it's settled by twenty thirty rose to eighty-two."
+    }
+   ]
+  },
+  {
+   "id": "end",
+   "title": "Totals",
+   "lines": [
+    {
+     "id": "e1",
+     "text": "Twenty-six thousand, eight hundred ten lemmas checked by Lean. Still nothing pulls toward P = NP, and nothing has reached the claim itself.",
+     "say": "Twenty-six thousand, eight hundred ten lemmas checked by Lean. Still nothing pulls toward P equals NP, and nothing has reached the claim itself."
+    }
+   ]
+  }
+ ]
+}
