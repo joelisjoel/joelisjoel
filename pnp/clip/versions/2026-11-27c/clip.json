@@ -1,0 +1,153 @@
+{
+ "hours": 120,
+ "total": 64.0,
+ "segments": [
+  {
+   "v0": 0.0,
+   "v1": 9.0,
+   "h0": 71.63333333333333,
+   "h1": 74.03333333333333,
+   "snap": true
+  },
+  {
+   "v0": 9.0,
+   "v1": 17.5,
+   "h0": 0,
+   "h1": 102.62208027777778,
+   "snap": true
+  },
+  {
+   "v0": 17.5,
+   "v1": 25.5,
+   "h0": 102.62208027777778,
+   "h1": 108.47428333333333,
+   "snap": false
+  },
+  {
+   "v0": 25.5,
+   "v1": 31.5,
+   "h0": 108.47428333333333,
+   "h1": 114.3264863888889,
+   "snap": false
+  },
+  {
+   "v0": 31.5,
+   "v1": 42.0,
+   "h0": 114.3264863888889,
+   "h1": 120.17868944444444,
+   "snap": false
+  },
+  {
+   "v0": 42.0,
+   "v1": 53.5,
+   "h0": 120.17868944444444,
+   "h1": 120.17868944444444,
+   "snap": false
+  },
+  {
+   "v0": 53.5,
+   "v1": 64.0,
+   "h0": 120.17868944444444,
+   "h1": 120.17868944444444,
+   "snap": false
+  }
+ ],
+ "captions": [
+  [
+   0.0,
+   8.85,
+   "This is an AI agent fleet attacking P vs NP, in public. Here's what's new today, Friday, November 27."
+  ],
+  [
+   9.0,
+   17.35,
+   "First, the story so far. The fleet built chains of lemmas toward P ≠ NP, while outside agents filled the stands."
+  ],
+  [
+   17.5,
+   25.35,
+   "Since yesterday's post, outside agents added about fifteen hundred checked results, most of them by Thursday afternoon."
+  ],
+  [
+   25.5,
+   31.35,
+   "Then it went quiet. No lemma on either side was killed; all eleven kills were in the stands."
+  ],
+  [
+   31.5,
+   41.85,
+   "Overnight, on the P ≠ NP side, a four-day attempt at the circuits program's target, a lower bound for SAT, died. The target is open again."
+  ],
+  [
+   42.0,
+   53.35,
+   "On the markets, Manifold puts P = NP at thirteen percent, down a point. Kalshi's odds that it's settled by 2030 rose two points, to seventy-five."
+  ]
+ ],
+ "endStart": 53.5,
+ "eyebrow": "Daily update · Fri, Nov 27 · an AI agent fleet attacking P vs NP in public · pequalnp.com",
+ "endTitle": "120 hours in",
+ "endLines": [
+  "12,735 lemmas checked by Lean, 1,559 of them since yesterday's post.",
+  "None pulls toward P = NP.",
+  "None has reached the claim: no lemma even states P ≠ NP."
+ ],
+ "source": "Data: pequalnp.com public record, Nov 22–27, 2026 · independent visualization",
+ "tags": [
+  [
+   0.0,
+   9.0,
+   "New today · Fri, Nov 27"
+  ],
+  [
+   9.0,
+   17.5,
+   "The story so far · since Sun, Nov 22"
+  ],
+  [
+   17.5,
+   42.0,
+   "New since Thu 11:09am PT"
+  ],
+  [
+   42.0,
+   53.5,
+   "The markets · Fri, Nov 27"
+  ]
+ ],
+ "panels": [
+  [
+   42.0,
+   53.5,
+   "markets"
+  ]
+ ],
+ "markets": [
+  {
+   "source": "Manifold",
+   "question": "Does P = NP?",
+   "kind": "truth",
+   "money": "play money",
+   "then": 0.1445306518714359,
+   "now": 0.13122144208903339
+  },
+  {
+   "source": "Polymarket",
+   "question": "Will AI solve P versus NP in 2026?",
+   "kind": "settled",
+   "money": "$429,689 traded",
+   "then": 0.1505,
+   "now": 0.1515
+  },
+  {
+   "source": "Kalshi",
+   "question": "Will P vs NP be resolved before 2030?",
+   "kind": "settled",
+   "money": "$15,319 traded",
+   "then": 0.73,
+   "now": 0.75
+  }
+ ],
+ "since": "Thu 11:09am PT",
+ "posts": []
+}
