@@ -43,18 +43,34 @@ for (let f = 0; f <= last; f++) {
   const cap = TXT.captions.find(([a, b]) => v >= a && v < b);
   // the first caption is fully up on frame 0: that frame is the thumbnail
   const capAlpha = cap ? Math.min(cap[0] === 0 ? 1 : (v - cap[0]) / 0.3, (cap[1] - v) / 0.3, 1) : 0;
-  await page.evaluate(({ T, snap, cap, capAlpha, v, TXT }) => {
+  const tag = (TXT.tags || []).find(([a, b]) => v >= a && v < b), panel = (TXT.panels || []).find(([a, b]) => v >= a && v < b);
+  const tagAlpha = tag ? Math.min(tag[0] === 0 ? 1 : (v - tag[0]) / 0.3, (tag[1] - v) / 0.3, 1) : 0;
+  const panelAlpha = panel ? Math.min((v - panel[0]) / 0.4, (panel[1] - v) / 0.4, 1) : 0;
+  await page.evaluate(({ T, snap, cap, capAlpha, tag, tagAlpha, panel, panelAlpha, v, TXT }) => {
     const r = window.__clip.setT(T, snap), n = (x) => x.toLocaleString('en-US');
     const esc = (s) => s.replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[ch]);
     document.getElementById('clipClock').innerHTML = `${esc(r.when)}<small>hour ${Math.floor(r.hour)} of ${TXT.hours}</small>`;
     document.getElementById('tEq').textContent = n(r.eq[0]); document.getElementById('tGrey').textContent = n(r.grey[0]); document.getElementById('tNeq').textContent = n(r.neq[0]);
     const p = document.getElementById('clipCapText'); p.textContent = cap || ''; p.style.opacity = String(Math.max(0, capAlpha));
+    const tg = document.getElementById('clipTag'); tg.hidden = !tag; tg.textContent = tag || ''; tg.style.opacity = String(Math.max(0, tagAlpha));
+    const pn = document.getElementById('clipPanel'); pn.hidden = !panel; pn.style.opacity = String(Math.max(0, panelAlpha));
+    if (panel === 'markets') {
+      const pc = (x) => (x == null ? '–' : `${Math.round(x * 100)}%`);
+      const row = (m) => { const d = m.then == null ? null : Math.round(m.now * 100) - Math.round(m.then * 100);
+        const ch = d == null ? '' : d === 0 ? 'no change' : `${d > 0 ? '▲' : '▼'} ${Math.abs(d)} from ${pc(m.then)}`;
+        return `<div class="mk"><div class="q">${esc(m.source)}: “${esc(m.question)}”<small>${esc(m.money || '')}</small></div><div class="v">${pc(m.now)}<small>${esc(ch)}</small></div></div>`; };
+      const truth = TXT.markets.filter((m) => m.kind === 'truth'), settled = TXT.markets.filter((m) => m.kind !== 'truth');
+      pn.innerHTML = (truth.length ? `<h3>Chance that P = NP · since ${esc(TXT.since)}</h3>${truth.map(row).join('')}` : '')
+        + (settled.length ? `<h3>Chance it gets settled, either way</h3>${settled.map(row).join('')}` : '');
+    } else if (panel === 'posts') {
+      pn.innerHTML = `<h3>Top posts on X</h3>` + TXT.posts.slice(0, 2).map((q) => `<div class="post"><b>${esc(q.name || q.handle)}</b><span>${esc(q.handle || '')}${q.metric ? ' · ' + esc(q.metric) : ''}</span><p>${esc(q.text)}</p></div>`).join('');
+    }
     const card = document.getElementById('clipCard');
     if (v >= TXT.endStart) {
       card.hidden = false; card.style.opacity = String(Math.min(1, (v - TXT.endStart) / 0.6));
       card.innerHTML = `<div><h2>${esc(TXT.endTitle)}</h2>${TXT.endLines.map((l) => `<p>${esc(l)}</p>`).join('')}<div class="src">${esc(TXT.source)}</div></div>`;
     } else card.hidden = true;
-  }, { T, snap: snap || f === 0, cap: cap?.[2], capAlpha, v, TXT });
+  }, { T, snap: snap || f === 0, cap: cap?.[2], capAlpha, tag: tag?.[2], tagAlpha, panel: panel?.[2], panelAlpha, v, TXT });
   await page.screenshot({ path: path.join(ROOT, 'frames', `${String(f).padStart(5, '0')}.jpg`), type: 'jpeg', quality: 90 });
   if (f % 150 === 0) console.log(`frame ${f}/${N}  ${((Date.now() - t0) / 1000).toFixed(0)}s`);
 }

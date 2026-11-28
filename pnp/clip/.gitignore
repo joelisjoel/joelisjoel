@@ -9,3 +9,5 @@
 /out/site/
 node_modules/
 *.png
+/markets_prev.json
+/posts.json

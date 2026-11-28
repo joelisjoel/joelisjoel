@@ -51,12 +51,19 @@ fixed, because `tools/clip_text.py` maps each to a stretch of the record:
 
 | Id | Over | Says |
 |---|---|---|
-| `o1` | the busiest laser moment (the thumbnail) | what this is, and "here's what's new today" |
+| `o1` | the busiest laser moment (the thumbnail) | what this is, and "here's what's new today" with the date ("Friday, November 27"); a tag on screen shows it too |
 | `r1` | hour 0 to the last post, fast | the story so far, one sentence |
 | `n1` | the new hours, up to the first new kill on the two sides | the headline change |
 | `n3` | the new kills on the two sides | those kills, or the next true change if there were none |
 | `n2` | the rest of the new hours | the other change worth saying |
+| `m1` | a panel of the markets (optional, before `e1`) | the market moves since the last post: Manifold's chance that P = NP first, then the settle-either-way markets if they moved |
+| `x1` | a panel of top posts on X (optional, before `e1`) | the top one or two posts about pequalnp.com, only from links or screenshots Joel sent; needs `posts.json` |
 | `e1` | the end card | the checked total; nothing pulls toward P = NP; nothing has reached the claim |
+
+The markets panel compares today's prices with the ones saved in the last version's `markets.json`
+(make_version.sh keeps each day's copy). For `x1`, write `clip/versions/$DATE/posts.json` as a list of
+`{"name", "handle", "text", "metric"}`, the text copied word for word from the post; the card shows two at most.
+Claude can't read X, so skip `x1` unless Joel sent posts.
 
 Rules: odds are always the chance that **P = NP** (the surprising answer): our toy odds, Manifold's
 "Does P = NP?" and the 2019 poll (12% said P = NP). Polymarket and Kalshi price whether the question

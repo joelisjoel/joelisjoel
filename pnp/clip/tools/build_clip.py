@@ -65,6 +65,22 @@ html, body { width: 1080px; height: 1080px; overflow: hidden; background: var(--
 #clipCard h2 { font: 800 74px/1 var(--f-display); margin: 0 0 22px; text-wrap: balance; }
 #clipCard p { font: 500 31px/1.35 var(--f-body); margin: 0 0 16px; color: var(--fg); text-wrap: balance; }
 #clipCard .src { font: 500 17px/1.4 var(--f-mono); color: var(--muted); margin-top: 18px; }
+#clipTag { position: absolute; left: 50%; bottom: 132px; transform: translateX(-50%); z-index: 3; white-space: nowrap;
+  font: 700 21px/1 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: #0b0f0e; background: var(--hot);
+  padding: 9px 16px 8px; border-radius: 999px; }
+#clipPanel { position: absolute; left: 70px; right: 70px; top: 250px; z-index: 3; padding: 30px 36px 26px; border-radius: 16px;
+  background: rgba(9, 12, 11, 0.93); border: 1px solid var(--rule); }
+#clipPanel h3 { font: 700 19px/1.2 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+#clipPanel h3 + .mk { margin-top: 0; }
+#clipPanel .mk { display: grid; grid-template-columns: 1fr auto; gap: 4px 20px; align-items: baseline; margin: 0 0 18px; }
+#clipPanel .mk .q { font: 600 27px/1.25 var(--f-body); }
+#clipPanel .mk .q small { display: block; font: 500 17px/1.4 var(--f-mono); color: var(--muted); }
+#clipPanel .mk .v { font: 800 46px/1 var(--f-display); font-variant-numeric: tabular-nums; text-align: right; }
+#clipPanel .mk .v small { display: block; font: 600 18px/1.3 var(--f-mono); color: var(--muted); }
+#clipPanel .post { margin: 0 0 22px; }
+#clipPanel .post b { font: 700 24px/1.3 var(--f-body); }
+#clipPanel .post span { font: 500 18px/1.3 var(--f-mono); color: var(--muted); margin-left: 10px; }
+#clipPanel .post p { font: 500 27px/1.35 var(--f-body); margin: 6px 0 0; }
 </style>
 <div id="clipHdr">
   <div class="eb">An AI agent fleet is attacking P vs NP in public · pequalnp.com record</div>
@@ -72,6 +88,8 @@ html, body { width: 1080px; height: 1080px; overflow: hidden; background: var(--
   <div class="tal"><span style="color:var(--eq)">◀ toward P = NP <b id="tEq">0</b></span><span>grey middle <b id="tGrey">0</b></span><span style="color:var(--neq)"><b id="tNeq">0</b> toward P ≠ NP ▶</span></div>
 </div>
 <div id="clipCap"><p id="clipCapText"></p></div>
+<div id="clipTag" hidden></div>
+<div id="clipPanel" hidden></div>
 <div id="clipCard" hidden></div>
 """
 s = s.replace("<div class=\"wrap\">", overlay + "\n<div class=\"wrap\">", 1)
