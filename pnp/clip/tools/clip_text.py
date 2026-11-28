@@ -36,7 +36,10 @@ rng = f"{a:%b} {a.day}–{b.day}, {b.year}" if a.month == b.month else f"{a:%b} 
 # kills of lemmas on the two sides, in record hours
 rows, P = data["rows"], data["programs"]
 aim = {"p_eq_np": -1, "p_neq_np": 1, "neutral": 0}
-side_kills = sorted(rows[v][3] / 60 for v, a_ in data["attacks"] if aim[P[rows[v][0]]["aims_at"]] != 0)
+# on a side as the pages draw it: a program aiming at an answer, or a step of the P = NP search's kill chain
+alg_chain = {x for p in P if p["id"] == "p_eq_np_search" for x in p.get("chain", []) if x}
+on_side = lambda v: aim[P[rows[v][0]]["aims_at"]] != 0 or f"L-{P[rows[v][0]]['key']}-{rows[v][1]:03d}" in alg_chain
+side_kills = sorted(rows[v][3] / 60 for v, a_ in data["attacks"] if on_side(v))
 live = lambda h: bisect.bisect_right(side_kills, h) - bisect.bisect_left(side_kills, h - 110 / 60)
 peak = max((k / 6 for k in range(int(H * 6))), key=live)      # busiest moment, to a tenth of an hour
 new_kills = [k for k in side_kills if k > Hprev]

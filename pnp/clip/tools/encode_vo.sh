@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Encode frames/ (2160x2160 JPEGs) + voiceover + music -> a 1080x1080 clip for X.
+# Encode frames/ (JPEGs at 2x) + voiceover + music -> a clip for X: 1920x1080 by default (the v3 clip),
+# SIZE=1080x1080 for the square tug-of-war clip.
 # Voice treatment and ducking follow video/pi/tools/encode.sh: a light digital sheen on the
 # Kokoro voice, the music ducked under it, loudness normalized to -15 LUFS, last frame held 3 s.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 FF=${FFMPEG:-$(python3 -c 'import imageio_ffmpeg as f; print(f.get_ffmpeg_exe())' 2>/dev/null || echo ffmpeg)}
-OUT=${1:-out/pnp-tug-of-war.mp4}
+OUT=${1:-out/pnp-tug-of-war.mp4}; SIZE=${SIZE:-1920x1080}
 mkdir -p out
 "$FF" -hide_banner -loglevel error -y -i audio/vo_track.wav -i audio/music.wav -filter_complex "
 [0:a]highpass=f=80,equalizer=f=3500:t=q:w=1.2:g=3,
@@ -18,7 +19,7 @@ mkdir -p out
 [vo][md]amix=inputs=2:normalize=0:duration=longest,
      loudnorm=I=-15:TP=-1.5:LRA=9[out]" -map "[out]" -ar 48000 audio/mix.wav
 "$FF" -hide_banner -loglevel error -stats -y -framerate 30 -i frames/%05d.jpg -i audio/mix.wav \
-  -vf "scale=1080:1080:flags=lanczos:in_range=pc:out_range=tv,format=yuv420p,tpad=stop_mode=clone:stop_duration=3" \
+  -vf "scale=${SIZE/x/:}:flags=lanczos:in_range=pc:out_range=tv,format=yuv420p,tpad=stop_mode=clone:stop_duration=3" \
   -c:v libx264 -profile:v high -preset slow -crf 20 -pix_fmt yuv420p -tune animation \
   -c:a aac -b:a 160k -ar 48000 -movflags +faststart -shortest "$OUT"
 echo "wrote $OUT"

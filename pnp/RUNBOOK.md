@@ -72,15 +72,22 @@ use `text` (with ≠ and =) and the voice reads `say` (words). Print each line's
 (`kokoro.tokenizer.phonemize`) and fix anything misread. Say what the data shows, not more:
 counts are not odds, and no lemma states P ≠ NP.
 
+Name things as the picture shows them. The clip is drawn from the v3 page (`pages/game.html`): neutral
+lemmas (the library and meta-complexity programs) sit **in the stands**, above and below the field, so
+say "in the stands", not "the grey middle". The grey field between the two truth zones holds only the
+open lemmas on the two sides, each placed by the page's guess at how likely it is true. The header's
+tallies follow the same words: checked toward P = NP, open in the grey field, in the stands, checked
+toward P ≠ NP.
+
 ## 5. Build and look
 
 ```bash
-clip/tools/make_version.sh "$DATE" "$DATA"        # about 6 minutes
+clip/tools/make_version.sh "$DATE" "$DATA"        # about 7 minutes; 1920x1080, drawn from the v3 page
 ```
 
-Then look at frames 0 (the thumbnail), one in the story so far, one in the new hours, and the
-end card. Check that the captions fit and the voice lines up with the picture (the new kills fire
-during `n3`).
+Then look at frames 0 (the thumbnail), one in the story so far, one in the new hours, the markets
+panel and the end card. Check that the captions fit and the voice lines up with the picture (the new
+kills fire during `n3`). `CLIP_PAGE=tug` still builds the older square clip from `pages/tug.html`.
 
 ## 6. Commit
 
@@ -92,13 +99,16 @@ In `joelisjoel.github.io`, on the branch:
 - refresh the live game: `python3 pipeline/site_game.py pages/game.html $DATA/out/game/data.json <site>/pnp`;
 - copy `clip/out/site/pnp-$DATE.mp4` to `videos/`;
 - in `_data/home.yml`, item `pequalsnp`: add the new clip at the top of `videos:` (keep the 7
-  newest in the list), refresh `images/home/pequalsnp-clip-poster.jpg` from frame 0 (720x720),
+  newest in the list), refresh `images/home/pequalsnp-clip-poster.jpg` from frame 0 (1280x720,
+  16:9 like the clip: `ffmpeg -i clip/out/site/pnp-$DATE.mp4 -frames:v 1 -q:v 3 <poster>`),
   and update the "As of …" sentence with the new numbers;
+- the first time a 16:9 clip is the newest, set the entry's `video_square: true` to `false` (the
+  player is square only for the older square clips);
 - `jekyll build` to check, then push the branch. **Do not merge to `main`** until Joel says so.
 
 ## 8. Tell Joel
 
-Send the 1080 clip (`clip/out/pnp-$DATE.mp4`) with: big news if any, what changed (numbers),
+Send the 1920x1080 clip (`clip/out/pnp-$DATE.mp4`) with: big news if any, what changed (numbers),
 a suggested post, and the question "publish to joelisjoel.org?". Publishing = fast-forward `main`
 to the site branch, then check the live page.
 
@@ -109,5 +119,6 @@ Sheets connector can't write to it yet, so Joel fills it in.
 
 ## Storage
 
-Each site clip adds about 2 MB that git keeps forever. Check `git count-objects -vH` in the site
-repo now and then; before it nears 800 MB, move older clips to YouTube (`youtube:` on an entry).
+Each site clip adds about 5 MB (1280x720; the square ones were 2 to 4 MB) that git keeps forever.
+Check `git count-objects -vH` in the site repo now and then; before it nears 800 MB, move older
+clips to YouTube (`youtube:` on an entry).

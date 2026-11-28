@@ -4,6 +4,33 @@ One clip per day (`out/pnp-YYYY-MM-DD.mp4`), each rebuilt from `versions/YYYY-MM
 (narration, timing, clip text and the two record snapshots it compares). Build a new one with
 `tools/make_version.sh DATE DATA_DIR`; the daily steps are in `../RUNBOOK.md`.
 
+From Nov 28 the clip is **16:9 (1920x1080)** and drawn from the **v3 page, `../pages/game.html`**
+(the one live at joelisjoel.org/pnp), by `tools/build_clip_v3.py`. Clips up to `2026-11-27b` are
+square (1080x1080) and drawn from `../pages/tug.html` by `tools/build_clip.py`; `CLIP_PAGE=tug
+tools/make_version.sh …` still builds that kind.
+
+## The 16:9 clip (from Nov 28)
+
+`tools/build_clip_v3.py ../pages/game.html clip.html` keeps only the page's field: the stands
+(neutral lemmas, the library and meta-complexity programs, above and below the field, with the
+snipers among them), the truth zones, ropes, knot, lasers and target lines. The page's controls,
+scoreboard, benches, odds timeline, legend and text are hidden. The field is drawn at half size and
+scaled up 2x, with labels a little larger again, so they and the lasers read on a phone held
+landscape. Kills in the stands are rings a little larger than the page's.
+
+- **Header**: eyebrow, title, the record clock with "hour N of M", and four tallies counted the way
+  the page draws them: checked toward P = NP (its truth zone), open in the grey field (the open
+  lemmas on the two sides), in the stands (every neutral lemma and sniper shown), checked toward
+  P ≠ NP.
+- **Knot**: stays at the centre. The page moves it only when the P = NP search's target is proved;
+  the page's toy odds only drive its hidden timeline. `render_clip.mjs` prints a note if the knot
+  ever leaves the centre.
+- **Overlays**: captions in a band under the field, the gold date tag just above them, the markets
+  or X-posts panel over the middle of the field, and the end card.
+- `render_clip.mjs` renders at 1920x1080 with device scale factor 2 (`--size`, `--dsf`);
+  `encode_vo.sh` scales to 1920x1080 (`SIZE=`), and `make_version.sh` writes the site copy at
+  1280x720.
+
 ## The first clip (Nov 25)
 
 A square (1080x1080) clip of the tug-of-war view of the pequalnp.com agent fleet's
@@ -50,10 +77,11 @@ spoken lines, word for word, with symbols (P ≠ NP) where the voice says words.
    `head_prev.json`, and writes the three pages' `data.json` files to `<data dir>/out/`.
    The data dir keeps caches (side lemma records, refuted records), so later runs fetch little.
 2. Republish the field, roots and tug-of-war pages with their new `data.json`.
-3. Copy `<data dir>/out/tug/data.json` here as `data.json`, then
+3. Copy `<data dir>/out/game/data.json` here as `data.json` (`out/tug/` for the square clip), then
    `python3 tools/clip_text.py <data dir>/head.json <data dir>/head_prev.json` writes `clip.json`
    (hours, counts, captions, and a "since yesterday's post" line).
-4. Rebuild `clip.html`, render and encode as above.
+4. Rebuild `clip.html` (`tools/build_clip_v3.py ../pages/game.html clip.html`), render and encode as above.
+   `tools/make_version.sh` does steps 3 and 4, and the voiceover steps, in one go.
 
 The Nov 26 11:09am PT update: 23,475 lemmas (+6,255), 11,176 checked (+3,075), 5,194 refuted (+81).
 The kills nearly stopped overnight while outside agents kept adding results.

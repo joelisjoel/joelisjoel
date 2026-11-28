@@ -1,13 +1,17 @@
-// Render the tug-of-war clip to frames/NNNNN.jpg, one frame at a time in order
+// Render the clip to frames/NNNNN.jpg, one frame at a time in order
 // (positions ease from frame to frame, so frames are rendered sequentially).
 // The timeline, captions and words come from clip.json (tools/clip_text.py), timed to the voiceover.
-// Usage: node tools/render_clip.mjs [--only=a,b,c]   (--only writes just those frame numbers, for checks)
+// Usage: node tools/render_clip.mjs [--only=a,b,c] [--size=WxH] [--dsf=N]
+//   --only writes just those frame numbers, for checks; --size is the page size in CSS px (default 1920x1080,
+//   the v3 clip from build_clip_v3.py; 1080x1080 for the square tug clip); --dsf the device scale factor (default 2).
 import { createRequire } from 'node:module';
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FPS = 30;
-const only = (process.argv.find((a) => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean).map(Number);
+const arg = (k, d) => (process.argv.find((a) => a.startsWith(`--${k}=`)) || `--${k}=${d}`).slice(k.length + 3);
+const only = arg('only', '').split(',').filter(Boolean).map(Number);
+const [VW, VH] = arg('size', process.env.CLIP_SIZE || '1920x1080').split('x').map(Number), DSF = Number(arg('dsf', process.env.CLIP_DSF || 2));
 const TXT = JSON.parse(fs.readFileSync(path.join(ROOT, 'clip.json'), 'utf8'));
 const N = Math.round(TXT.total * FPS);
 
@@ -18,7 +22,7 @@ function at(v) {
   const p = Math.min(1, Math.max(0, (v - s.v0) / (s.v1 - s.v0)));
   return [(s.h0 + (s.h1 - s.h0) * p) * 60, TXT.segments.indexOf(s)];
 }
-const SKELETON = (body) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=1080"><style>:root{color-scheme:dark}body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style></head><body>${body}</body></html>`;
+const SKELETON = (body) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=${VW}"><style>:root{color-scheme:dark}body{margin:0;font:14px system-ui}[hidden]{display:none!important}</style></head><body>${body}</body></html>`;
 const srv = http.createServer((req, res) => {
   const f = path.join(ROOT, req.url.split('?')[0].replace(/^\/+/, '') || 'clip.html');
   if (!fs.existsSync(f)) { res.writeHead(404); return res.end(); }
@@ -27,15 +31,15 @@ const srv = http.createServer((req, res) => {
   res.writeHead(200, { 'content-type': 'application/json' }); res.end(b);
 }).listen(0);
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1080, height: 1080 }, deviceScaleFactor: 2, colorScheme: 'dark' });
+const page = await browser.newPage({ viewport: { width: VW, height: VH }, deviceScaleFactor: DSF, colorScheme: 'dark' });
 const errs = []; page.on('pageerror', (e) => errs.push(String(e)));
 await page.goto(`http://localhost:${srv.address().port}/clip.html`);
 await page.waitForFunction(() => window.__clip, null, { timeout: 30000 });
 await page.evaluate(() => document.fonts.ready);
 await page.evaluate((eb) => { const e = document.querySelector('#clipHdr .eb'); if (e) e.textContent = eb; }, TXT.eyebrow);
-console.log('canvas height', await page.evaluate(() => window.__clip.height()), 'frames', N);
+console.log('size', `${VW}x${VH}@${DSF}`, 'canvas height', await page.evaluate(() => window.__clip.height()), 'frames', N);
 fs.mkdirSync(path.join(ROOT, 'frames'), { recursive: true });
-const t0 = Date.now(); let lastSeg = -1;
+const t0 = Date.now(); let lastSeg = -1, knotAt = -1;
 const last = only.length ? Math.max(...only) : N - 1;
 for (let f = 0; f <= last; f++) {
   const v = f / FPS, [T, seg] = at(v), snap = seg !== lastSeg && TXT.segments[seg].snap; lastSeg = seg;
@@ -46,11 +50,12 @@ for (let f = 0; f <= last; f++) {
   const tag = (TXT.tags || []).find(([a, b]) => v >= a && v < b), panel = (TXT.panels || []).find(([a, b]) => v >= a && v < b);
   const tagAlpha = tag ? Math.min(tag[0] === 0 ? 1 : (v - tag[0]) / 0.3, (tag[1] - v) / 0.3, 1) : 0;
   const panelAlpha = panel ? Math.min((v - panel[0]) / 0.4, (panel[1] - v) / 0.4, 1) : 0;
-  await page.evaluate(({ T, snap, cap, capAlpha, tag, tagAlpha, panel, panelAlpha, v, TXT }) => {
+  const knot = await page.evaluate(({ T, snap, cap, capAlpha, tag, tagAlpha, panel, panelAlpha, v, TXT }) => {
     const r = window.__clip.setT(T, snap), n = (x) => x.toLocaleString('en-US');
     const esc = (s) => s.replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[ch]);
     document.getElementById('clipClock').innerHTML = `${esc(r.when)}<small>hour ${Math.floor(r.hour)} of ${TXT.hours}</small>`;
     document.getElementById('tEq').textContent = n(r.eq[0]); document.getElementById('tGrey').textContent = n(r.grey[0]); document.getElementById('tNeq').textContent = n(r.neq[0]);
+    const ts = document.getElementById('tStands'); if (ts && r.stands) ts.textContent = n(r.stands[0]);
     const p = document.getElementById('clipCapText'); p.textContent = cap || ''; p.style.opacity = String(Math.max(0, capAlpha));
     const tg = document.getElementById('clipTag'); tg.hidden = !tag; tg.textContent = tag || ''; tg.style.opacity = String(Math.max(0, tagAlpha));
     const pn = document.getElementById('clipPanel'); pn.hidden = !panel; pn.style.opacity = String(Math.max(0, panelAlpha));
@@ -70,9 +75,12 @@ for (let f = 0; f <= last; f++) {
       card.hidden = false; card.style.opacity = String(Math.min(1, (v - TXT.endStart) / 0.6));
       card.innerHTML = `<div><h2>${esc(TXT.endTitle)}</h2>${TXT.endLines.map((l) => `<p>${esc(l)}</p>`).join('')}<div class="src">${esc(TXT.source)}</div></div>`;
     } else card.hidden = true;
+    return r.knot || 0;
   }, { T, snap: snap || f === 0, cap: cap?.[2], capAlpha, tag: tag?.[2], tagAlpha, panel: panel?.[2], panelAlpha, v, TXT });
+  if (knot && knotAt < 0) knotAt = f;   // the v3 page moves the knot only when a proof settles the claim
   await page.screenshot({ path: path.join(ROOT, 'frames', `${String(f).padStart(5, '0')}.jpg`), type: 'jpeg', quality: 90 });
   if (f % 150 === 0) console.log(`frame ${f}/${N}  ${((Date.now() - t0) / 1000).toFixed(0)}s`);
 }
+if (knotAt >= 0) console.log(`NOTE: the knot left the centre from frame ${knotAt}: the page moves it only on a proof. Check the record before posting.`);
 console.log('errors:', errs.length ? errs : 'none', 'done in', ((Date.now() - t0) / 1000).toFixed(0), 's');
 await browser.close(); srv.close();

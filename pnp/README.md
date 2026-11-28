@@ -9,7 +9,7 @@ or affiliated with pequalnp.com.
 |---|---|
 | `pages/` | Three interactive pages, each reading a `data.json` beside it |
 | `pipeline/` | Refreshes the record and builds each page's `data.json` |
-| `clip/` | Daily 1080x1080 video clips of the tug of war for X, with voiceover; one folder per version |
+| `clip/` | Daily video clips of the tug of war for X, with voiceover; one folder per version. From Nov 28, 16:9 (1920x1080) and drawn from `game.html`; square (1080x1080, from `tug.html`) before |
 | `snapshots/` | The record's `head.json` from every data run (counts, for "what changed") |
 | `RUNBOOK.md` | The daily update, step by step |
 | `mirza/` | The record drawn like Mirza's map of the Riemann proof: dots, threads, height by chain length (started) |
