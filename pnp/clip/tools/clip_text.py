@@ -77,7 +77,9 @@ for ch in timing["chapters"]:
         v0, v1 = ln["start"], ln["start"] + ln["dur"]
         segments.append({"v0": v0, "v1": v1, "h0": h0, "h1": h1, "snap": snap})
         captions.append([v0, v1 - 0.15, ln["text"]])
-        if ln["id"] in TAG: tags.append([v0, v1, TAG[ln["id"]]])
+        if ln["id"] in TAG:
+            if tags and tags[-1][2] == TAG[ln["id"]] and abs(tags[-1][1] - v0) < 0.01: tags[-1][1] = v1   # one tag across lines
+            else: tags.append([v0, v1, TAG[ln["id"]]])
         if ln["id"] == "m1": panels.append([v0, v1, "markets"])
         if ln["id"] == "x1": panels.append([v0, v1, "posts"])
         if ln["id"] == "e1": end_start = ln["start"]
